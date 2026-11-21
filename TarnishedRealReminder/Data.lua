@@ -66,8 +66,12 @@ ns.ELIGIBLE_INSTANCE_NAMES = {
 --             and the row then shows the game's name.
 --   optional  rares, summoned and quest bosses: listed, but only counted
 --             once you get a Real from them.
---   low       below level 55 in Classic, so no Real; a level the addon
---             reads in game always wins over this.
+--   variable  the boss you fight changes from run to run (Ring of the Law
+--             picks one challenger; some are level 55+, some aren't). Its
+--             eligibility comes from the challenger seen in the fight, and the
+--             addon never "learns" it as no-Real.
+--
+-- Boss levels are in ns.BOSS_LEVELS below.
 --
 -- instanceNames: the names GetInstanceInfo may report for the group, when
 -- they differ from the group name. Groups sharing an instance (the two halves
@@ -79,15 +83,15 @@ ns.ROSTER = {
     {
         name = "Blackrock Depths", ids = { 230 },
         bosses = {
-            { "High Interrogator Gerstahn", low = true },
-            { "Lord Roccor", low = true },
-            { "Houndmaster Grebmar", low = true },
-            { "Ring of the Law", aliases = { "Ring of Law", "Gorosh the Dervish", "Grizzle", "Eviscerator",
+            { "High Interrogator Gerstahn" },
+            { "Lord Roccor" },
+            { "Houndmaster Grebmar" },
+            { "Ring of the Law", variable = true, aliases = { "Ring of Law", "Gorosh the Dervish", "Grizzle", "Eviscerator",
                                              "Ok'thor the Breaker", "Anub'shiah", "Hedrum the Creeper" } },
-            { "Fineous Darkvire", low = true },
-            { "Pyromancer Loregrain", low = true },
-            { "Bael'gar", low = true },
-            { "Lord Incendius", low = true },
+            { "Fineous Darkvire" },
+            { "Pyromancer Loregrain" },
+            { "Bael'gar" },
+            { "Lord Incendius" },
             { "General Angerforge" },
             { "Golem Lord Argelmach" },
             { "Phalanx" },
@@ -257,3 +261,85 @@ for _, def in ipairs(ns.ROSTER) do
         for _, a in ipairs(b.aliases or {}) do ns.BOSS_NAMES[a:lower()] = true end
     end
 end
+
+------------------------------------------------------------------------------
+-- Boss levels, from Wowhead's WoW: Forever database (wowhead.com/forever/
+-- npc=...), November 2026. Only level 55+ bosses drop a Real. Used when the
+-- game won't tell the addon a boss's level (it often won't in dungeons); a
+-- level read in game always wins. Values marked "Classic" weren't found for
+-- Forever and are the Classic level (High Interrogator Gerstahn, confirmed
+-- 52 in Forever, matches Classic). Bosses not listed are assumed to drop a
+-- Real, so one is never missed. Wowhead has no levels yet for Shaper's
+-- Terrace and Blackmaw Hold; both are max-level dungeons (55-60 and 58-60)
+-- whose loot needs level 55, so their bosses count as Real bosses.
+------------------------------------------------------------------------------
+ns.BOSS_LEVELS = {}
+local function levels(t)
+    for name, level in pairs(t) do ns.BOSS_LEVELS[name:lower()] = level end
+end
+
+-- Blackrock Depths
+levels({
+    ["High Interrogator Gerstahn"] = 52,
+    ["Lord Roccor"] = 51,            -- Classic
+    ["Houndmaster Grebmar"] = 52,    -- Classic
+    ["Fineous Darkvire"] = 54,       -- Classic
+    ["Pyromancer Loregrain"] = 52,   -- Classic
+    ["Bael'gar"] = 54,               -- Classic
+    ["Lord Incendius"] = 53,         -- Classic
+    ["General Angerforge"] = 57,
+    ["Golem Lord Argelmach"] = 57,
+    ["Phalanx"] = 55,
+    ["Hurley Blackbreath"] = 55,
+    ["Ambassador Flamelash"] = 57,
+    ["Magmus"] = 57,
+    ["Emperor Dagran Thaurissan"] = 59,
+    ["Warder Stilgiss"] = 56,
+    ["Verek"] = 55,
+    ["Panzor the Invincible"] = 57,
+    -- Chest of the Seven
+    ["Doom'rel"] = 57, ["Gloom'rel"] = 56, ["Seeth'rel"] = 56, ["Vile'rel"] = 56, ["Dope'rel"] = 56,
+    ["Anger'rel"] = 55, ["Hate'rel"] = 55,
+    -- Ring of the Law challengers (one per run)
+    ["Gorosh the Dervish"] = 56,
+    ["Grizzle"] = 54,
+    ["Eviscerator"] = 54,
+    ["Anub'shiah"] = 54,
+    ["Hedrum the Creeper"] = 53,
+    ["Ok'thor the Breaker"] = 53,
+})
+-- Blackrock Spire
+levels({
+    ["Highlord Omokk"] = 59, ["Shadow Hunter Vosh'gajin"] = 59, ["War Master Voone"] = 59,
+    ["Mother Smolderweb"] = 59, ["Urok Doomhowl"] = 60, ["Quartermaster Zigris"] = 59,
+    ["Halycon"] = 59, ["Gizrul the Slavener"] = 60,
+    ["Overlord Wyrmthalak"] = 60,    -- Classic
+    ["Pyroguard Emberseer"] = 60,    -- Classic
+    ["Warchief Rend Blackhand"] = 60, -- Classic
+    ["General Drakkisath"] = 62,     -- Classic
+})
+-- Dire Maul
+levels({
+    ["Pusillin"] = 56, ["Lethtendris"] = 57, ["Hydrospawn"] = 57, ["Zevrim Thornhoof"] = 57,
+    ["Alzzin the Wildshaper"] = 58,
+    ["Tendris Warpwood"] = 60, ["Magister Kalendris"] = 60, ["Illyanna Ravenoak"] = 60,
+    ["Immol'thar"] = 61, ["Prince Tortheldrin"] = 61,
+    ["Stomper Kreeg"] = 59,
+    ["Guard Mol'dar"] = 59, ["Guard Fengus"] = 59, ["Guard Slip'kik"] = 59, -- Classic
+    ["Captain Kromcrush"] = 61,                                             -- Classic
+    ["King Gordok"] = 62,
+})
+-- Scholomance
+levels({
+    ["Blood Steward of Kirtonos"] = 57, ["Kirtonos the Herald"] = 60, ["Jandice Barov"] = 61,
+    ["Rattlegore"] = 61, ["Marduk Blackpool"] = 58, ["Vectus"] = 60, ["Ras Frostwhisper"] = 60,
+    ["Instructor Malicia"] = 60, ["Doctor Theolen Krastinov"] = 60, ["Lorekeeper Polkelt"] = 60,
+    ["The Ravenian"] = 60, ["Lord Alexei Barov"] = 60, ["Lady Illucia Barov"] = 60,
+    ["Darkmaster Gandling"] = 61,
+})
+-- Stratholme
+levels({
+    ["Ezra Grimm"] = 61, ["The Unforgiven"] = 57, ["Postmaster Malown"] = 60, ["Timmy the Cruel"] = 58,
+    ["Skul"] = 58, ["Baroness Anastari"] = 59, ["Ramstein the Gorger"] = 61, ["Baron Rivendare"] = 62,
+    ["Cannon Master Willey"] = 60,
+})

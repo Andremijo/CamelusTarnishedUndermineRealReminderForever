@@ -138,6 +138,7 @@ local DEFAULTS = {
     bossLevels = {},        -- lower-cased boss name -> level
     knownBosses = {},       -- instance name -> { boss name -> true }
     ignoredBosses = {},     -- normalised boss name -> true (hidden from the checklist counts)
+    noRealBosses = {},      -- lower-cased boss name -> name: learned that its corpse never has a Real
     encounterEventsSeen = false,
 }
 
@@ -356,10 +357,38 @@ ns.alert = alert
 -- Kills and pending Reals
 ------------------------------------------------------------------------------
 
-local function levelOK(level)
-    if type(level) ~= "number" or level <= 0 then return true end -- unknown or skull: assume yes
-    return level >= ns.MIN_BOSS_LEVEL
+-- Does this boss drop a Real? Decided by, in order:
+--   1. the level read in game, when it could be read (a real level, not "??");
+--   2. Wowhead's level (ns.BOSS_LEVELS) of the units seen in the fight. For
+--      Ring of the Law that is the challenger who showed up this time;
+--   3. Wowhead's level for the boss itself;
+--   4. learned: its corpse had no Real for you on a day you hadn't looted it
+--      (never for a variable encounter like Ring of the Law);
+--   5. otherwise yes, so a Real is never missed.
+-- In dungeons this client often keeps unit levels secret from addons, which
+-- is why 2-4 exist. Returns eligible, and a reason for the debug output.
+local function bossEligible(name, level, instanceName, seenNames)
+    if type(level) == "number" and level > 0 then
+        return level >= ns.MIN_BOSS_LEVEL, "level " .. level
+    end
+    if seenNames then
+        local best
+        for seen in pairs(seenNames) do
+            local l = ns.BOSS_LEVELS[seen:lower()]
+            if l and (not best or l > best) then best = l end
+        end
+        if best then return best >= ns.MIN_BOSS_LEVEL, "fought a level " .. best .. " boss" end
+    end
+    local inst = instanceName or currentInstance()
+    local listed, variable = nil, false
+    if ns.Roster and ns.Roster.ListedLevel then listed, variable = ns.Roster.ListedLevel(name, inst) end
+    if listed then return listed >= ns.MIN_BOSS_LEVEL, "level " .. listed .. " (Wowhead)" end
+    if not variable and name and DB.noRealBosses[name:lower()] then
+        return false, "its corpse had no Real before (learned)"
+    end
+    return true, variable and "challenger unknown" or "level unknown"
 end
+ns.bossEligible = bossEligible
 
 local function bossLevel(name)
     local lname = lower(name)
@@ -380,16 +409,19 @@ local function rememberBoss(name)
 end
 
 -- A boss died. Start a reminder unless it is not eligible or already looted.
-local function registerKill(name, level, source, guids, force)
+local function registerKill(name, level, source, guids, force, seenNames)
     if not name then return end
     checkDailyReset()
     if not force and not isEligibleInstance() then
         debug(name .. " killed outside a Real dungeon.")
         return
     end
-    if not force and not levelOK(level) then
-        debug(string.format("%s is level %d, below %d: no Real.", name, level, ns.MIN_BOSS_LEVEL))
-        return
+    if not force then
+        local ok, why = bossEligible(name, level, nil, seenNames)
+        if not ok then
+            debug(string.format("%s: %s, below %d, so no Real.", name, why, ns.MIN_BOSS_LEVEL))
+            return
+        end
     end
     local key = name:lower()
     if CDB.looted[key] and not force then
@@ -414,6 +446,9 @@ local function resolvePending(index, how, count)
     if p.test then updateBanner(); return end
     CDB.looted[p.key] = { name = p.name, t = serverNow(), n = count, none = (how == "none") or nil,
                           instance = p.instance }
+    if how == "looted" and DB.noRealBosses[p.key] then
+        DB.noRealBosses[p.key] = nil -- it does drop one after all
+    end
     if how == "looted" then
         say(string.format("Got %s from |cffffffff%s|r. %d carried.",
             (count and count > 1) and (count .. " Reals") or "your Real", p.name, state.realCount or 0))
@@ -533,15 +568,16 @@ local function readBossUnits()
             local guid = plain(try(UnitGUID, unit))
             if guid then enc.guids[guid] = true end
             local name = plain(try(UnitName, unit))
-            if name and type(lvl) == "number" then
-                state.levels[name:lower()] = lvl
+            if name then
+                enc.names[name] = true -- who we're fighting (Ring of the Law's challenger)
+                if type(lvl) == "number" then state.levels[name:lower()] = lvl end
             end
         end
     end
 end
 
 local function onEncounterStart(id, name)
-    state.encounter = { id = plain(id), name = plain(name), guids = {} }
+    state.encounter = { id = plain(id), name = plain(name), guids = {}, names = {} }
     readBossUnits()
     C_Timer.After(1, readBossUnits)
 end
@@ -559,10 +595,16 @@ local function onEncounterEnd(id, name, success)
     -- it can still be credited to the right boss.
     table.insert(state.recentKills, { name = name, guids = enc and enc.guids, instance = (currentInstance()), t = GetTime() })
     if #state.recentKills > 20 then table.remove(state.recentKills, 1) end
-    local level = (enc and enc.maxLevel) or bossLevel(name)
-    if type(level) == "number" then DB.bossLevels[name:lower()] = level end
+    -- A variable encounter (Ring of the Law) has a different boss each run:
+    -- never reuse or store a level under its name.
+    local variable = ns.Roster and ns.Roster.IsVariable and ns.Roster.IsVariable(name, currentInstance())
+    local level = enc and enc.maxLevel
+    if not variable then
+        level = level or bossLevel(name)
+        if type(level) == "number" and level > 0 then DB.bossLevels[name:lower()] = level end
+    end
     if isEligibleInstance() then rememberBoss(name) end
-    registerKill(name, level, "encounter", enc and enc.guids)
+    registerKill(name, level, "encounter", enc and enc.guids, nil, enc and enc.names)
 end
 
 local function onBossKill(id, name)
@@ -594,6 +636,9 @@ local function checkUnit(unit)
     local lvl = plain(try(UnitLevel, unit))
     if type(lvl) == "number" and not plain(try(UnitIsDead, unit)) then
         state.levels[lname] = lvl
+    end
+    if state.encounter and ns.BOSS_LEVELS[lname] then
+        state.encounter.names[name] = true -- e.g. Ring of the Law's challenger, seen as target
     end
     if not ns.BOSS_NAMES[lname] then return end
     if type(lvl) == "number" then DB.bossLevels[lname] = lvl end
@@ -654,10 +699,18 @@ local function onLootOpened()
         state.lastLootSources = info.sources
         return
     end
-    -- A boss corpse we were waiting on, with no Real for us: already taken today.
+    -- A boss corpse we were waiting on (matched by GUID), with no Real for us.
+    -- We only wait on bosses not looted today, so this boss doesn't drop a
+    -- Real at all (below level 55): remember that and stop reminding.
     local idx = matchPendingByGuids(info.sources)
     if idx then
-        debug(CDB.pending[idx].name .. " had no Real for you (already looted today?).")
+        local p = CDB.pending[idx]
+        local variable = ns.Roster and ns.Roster.IsVariable and ns.Roster.IsVariable(p.name, p.instance)
+        if not p.test and not variable then
+            DB.noRealBosses[p.key] = p.name
+            say(string.format("|cffffffff%s|r had no Real for you, so it doesn't drop one. "
+                .. "You won't be reminded about it again (/trr relearn undoes this).", p.name))
+        end
         resolvePending(idx, "none")
     end
 end
@@ -742,6 +795,7 @@ local HELP = {
     "/trr test - show a test reminder",
     "/trr clear - forget the bosses still waiting to be looted",
     "/trr reset - forget everything looted today on this character",
+    "/trr relearn - forget which bosses were learned to drop no Real",
     "/trr add - count the dungeon you are in as a Real dungeon",
     "/trr unlock | lock - move the reminder banner",
     "/trr sound | warning - toggle the sound / raid warning text",
@@ -769,6 +823,11 @@ local function slash(msg)
     elseif cmd == "clear" then
         ns.dismissAll()
         say("Cleared.")
+    elseif cmd == "relearn" then
+        local n = 0
+        for _ in pairs(DB.noRealBosses) do n = n + 1 end
+        wipe(DB.noRealBosses)
+        say(n .. " learned boss" .. (n == 1 and "" or "es") .. " forgotten. They will remind you again.")
     elseif cmd == "reset" then
         wipe(CDB.looted); wipe(CDB.pending); updateBanner()
         say("Today's list wiped for this character.")
@@ -828,9 +887,22 @@ handlers.ADDON_LOADED = function(name)
     if ns.Options then pcall(ns.Options.RegisterWithSettings) end
 end
 
+-- Drop waiting reminders for bosses now known to be below 55 (for example
+-- one made by an older version of the addon).
+local function dropIneligiblePending()
+    for i = #CDB.pending, 1, -1 do
+        local p = CDB.pending[i]
+        if not p.test and not bossEligible(p.name, bossLevel(p.name), p.instance) then
+            table.remove(CDB.pending, i)
+        end
+    end
+end
+ns.dropIneligiblePending = dropIneligiblePending
+
 handlers.PLAYER_ENTERING_WORLD = function()
     if not DB then initDB() end
     checkDailyReset()
+    dropIneligiblePending()
     onZoneChanged()
     C_Timer.After(3, function() state.realCount = countReals() end)
 end
