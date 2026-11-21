@@ -20,6 +20,7 @@ local state = {
     loot = nil,              -- what the open loot window holds
     lastLootSources = nil,   -- GUIDs of the last loot window that held a Real
     lastNag = 0,
+    recentKills = {},        -- last boss kills (any dungeon), to credit Reals that had no reminder
     wasInEligible = false,
 }
 ns.state = state
@@ -130,11 +131,13 @@ local DEFAULTS = {
         intro = "zoom",           -- none / fade / zoom / slide
     },
     minimap = { hide = false, angle = 215 },
+    tooltipShows = "looted",  -- minimap tooltip lists: looted / unlooted / both
     realItemID = nil,    -- learned from loot / bags
     realIcon = nil,
     learnedInstances = {},  -- lower-cased instance name or "id:<n>" -> true
     bossLevels = {},        -- lower-cased boss name -> level
     knownBosses = {},       -- instance name -> { boss name -> true }
+    ignoredBosses = {},     -- normalised boss name -> true (hidden from the checklist counts)
     encounterEventsSeen = false,
 }
 
@@ -283,9 +286,22 @@ ns.countReals = countReals
 -- Reminder output (the banner itself lives in Banner.lua)
 ------------------------------------------------------------------------------
 
-local function pendingNames()
+-- Waiting Reals in the dungeon you are in. The banner and the repeat
+-- sound only nag about these; Reals missed in other dungeons show in the
+-- checklist and the minimap tooltip instead.
+local function pendingHere()
+    local here = currentInstance()
+    local out = {}
+    for _, p in ipairs(CDB.pending) do
+        if p.test or p.instance == here then out[#out + 1] = p end
+    end
+    return out
+end
+ns.pendingHere = pendingHere
+
+local function pendingNames(list)
     local names = {}
-    for _, p in ipairs(CDB.pending) do names[#names + 1] = p.name end
+    for _, p in ipairs(list or CDB.pending) do names[#names + 1] = p.name end
     return table.concat(names, ", ")
 end
 ns.pendingNames = pendingNames
@@ -415,20 +431,53 @@ local function matchPendingByGuids(sources)
     end
 end
 
+-- The oldest waiting boss in the dungeon you are in (a Real looted here can't
+-- belong to a boss in another dungeon).
+local function oldestPendingHere()
+    local here = currentInstance()
+    for i, p in ipairs(CDB.pending) do
+        if p.instance == here then return i end
+    end
+end
+
+-- Credit a Real that had no reminder waiting (for example the first boss in
+-- a dungeon the addon only learns about from this very Real): the corpse it
+-- came from if a recent kill matches, else the most recent kill here, else
+-- the dead target.
+local function creditUnexpectedReal(delta)
+    local here = currentInstance()
+    local byGuid, latest
+    for i = #state.recentKills, 1, -1 do
+        local k = state.recentKills[i]
+        if k.instance == here and not CDB.looted[k.name:lower()] and GetTime() - k.t < 600 then
+            latest = latest or k
+            for g in pairs(k.guids or {}) do
+                if state.lastLootSources and state.lastLootSources[g] then byGuid = byGuid or k end
+            end
+        end
+    end
+    local pick = byGuid or latest
+    local name = pick and pick.name
+    if not name then
+        local target = plain(try(UnitName, "target"))
+        if target and plain(try(UnitIsDead, "target")) then name = target end
+    end
+    if name then
+        CDB.looted[name:lower()] = { name = name, t = serverNow(), n = delta, instance = here }
+        if isEligibleInstance() then rememberBoss(name) end
+    end
+    return name
+end
+
 local function onRealsGained(delta)
     checkDailyReset()
-    local idx = matchPendingByGuids(state.lastLootSources) or (#CDB.pending > 0 and 1) or nil
+    local idx = matchPendingByGuids(state.lastLootSources) or oldestPendingHere()
     if idx then
         resolvePending(idx, "looted", delta)
     else
-        -- A Real we had no reminder for (kill not detected). Credit the corpse
-        -- you are targeting, if any, so it is not asked for again today.
-        local name = plain(try(UnitName, "target"))
-        if name and plain(try(UnitIsDead, "target")) then
-            CDB.looted[name:lower()] = { name = name, t = serverNow(), n = delta,
-                                         instance = (currentInstance()) }
-        end
-        say(string.format("+%d Real%s. %d carried.", delta, delta > 1 and "s" or "", state.realCount or 0))
+        local name = creditUnexpectedReal(delta)
+        say(string.format("+%d Real%s%s. %d carried.", delta, delta > 1 and "s" or "",
+            name and (" from |cffffffff" .. name .. "|r") or "", state.realCount or 0))
     end
     state.lastLootSources = nil
 end
@@ -451,6 +500,17 @@ end
 
 function ns.dismissAll()
     for i = #CDB.pending, 1, -1 do resolvePending(i, "none") end
+    ns.testMode = nil
+    updateBanner()
+end
+
+-- The banner's close button: only the bosses it is showing (this dungeon).
+function ns.dismissHere()
+    local here = currentInstance()
+    for i = #CDB.pending, 1, -1 do
+        local p = CDB.pending[i]
+        if p.test or p.instance == here then resolvePending(i, "none") end
+    end
     ns.testMode = nil
     updateBanner()
 end
@@ -495,6 +555,10 @@ local function onEncounterEnd(id, name, success)
     DB.encounterEventsSeen = true
     name = name or (enc and enc.name)
     if not name then return end
+    -- Remember every kill for a while, eligible or not, so a Real looted from
+    -- it can still be credited to the right boss.
+    table.insert(state.recentKills, { name = name, guids = enc and enc.guids, instance = (currentInstance()), t = GetTime() })
+    if #state.recentKills > 20 then table.remove(state.recentKills, 1) end
     local level = (enc and enc.maxLevel) or bossLevel(name)
     if type(level) == "number" then DB.bossLevels[name:lower()] = level end
     if isEligibleInstance() then rememberBoss(name) end
@@ -627,11 +691,13 @@ local function onZoneChanged()
 end
 
 local function nagTick()
-    if not CDB or #CDB.pending == 0 then return end
+    if not CDB then return end
+    local here = pendingHere()
+    if #here == 0 then return end
     if DB.nagSeconds <= 0 or not isEligibleInstance() then return end
     if InCombatLockdown() then return end
     if GetTime() - state.lastNag >= DB.nagSeconds then
-        alert("Loot the " .. ns.REAL_DISPLAY_NAME .. " from " .. pendingNames() .. "!")
+        alert("Loot the " .. ns.REAL_DISPLAY_NAME .. " from " .. pendingNames(here) .. "!")
     end
 end
 
@@ -672,6 +738,7 @@ end
 local HELP = {
     "/trr - status: Reals carried, bosses looted today, time to reset",
     "/cturr or /trr options - open the settings window (also: minimap button)",
+    "/cturr bosses - today's boss checklist by dungeon (also: shift-click the minimap button)",
     "/trr test - show a test reminder",
     "/trr clear - forget the bosses still waiting to be looted",
     "/trr reset - forget everything looted today on this character",
@@ -688,7 +755,9 @@ local function slash(msg)
     if cmd == "" or cmd == "status" then
         printStatus()
     elseif cmd == "options" or cmd == "config" or cmd == "settings" then
-        if ns.Options then ns.Options.Toggle() end
+        if ns.Options then ns.Options.Show("look") end
+    elseif cmd == "bosses" or cmd == "boss" or cmd == "checklist" or cmd == "list" then
+        if ns.Options then ns.Options.Show("bosses") end
     elseif cmd == "minimap" then
         DB.minimap.hide = not DB.minimap.hide
         if ns.Minimap then ns.Minimap.Refresh() end

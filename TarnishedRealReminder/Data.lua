@@ -106,3 +106,134 @@ add({
     "Bonesnout the Unbroken", "Blackmaw Behemoth", "Unbound Spirit",
     "Varrox Bleakhoof",
 })
+
+------------------------------------------------------------------------------
+-- Boss checklist (the "Bosses today" tab in the settings window)
+--
+-- One entry per boss encounter, in dungeon order. Names follow the game's
+-- encounter names where known (Scholomance is taken from what the game
+-- reports in WoW: Forever); "aliases" lists other names guides use, so a kill
+-- reported under either name ticks the same row. "low" marks bosses below
+-- level 55 in Classic, which drop no Real; a level the addon reads in game
+-- always wins over this. Bosses the game reports that are not listed here are
+-- added to the checklist automatically, and names are also matched loosely
+-- ("Kirtonos" = "Kirtonos the Herald").
+------------------------------------------------------------------------------
+ns.ROSTER = {
+    {
+        name = "Blackrock Depths", ids = { 230 },
+        bosses = {
+            { "High Interrogator Gerstahn", low = true },
+            { "Lord Roccor", low = true },
+            { "Houndmaster Grebmar", low = true },
+            { "Ring of Law", aliases = { "Gorosh the Dervish", "Grizzle", "Eviscerator", "Ok'thor the Breaker", "Anub'shiah", "Hedrum the Creeper" } },
+            { "Pyromancer Loregrain", low = true },
+            { "Lord Incendius", low = true },
+            { "Warder Stilgiss", aliases = { "Verek" } },
+            { "Fineous Darkvire", low = true },
+            { "Bael'Gar", low = true },
+            { "General Angerforge" },
+            { "Golem Lord Argelmach" },
+            { "Hurley Blackbreath" },
+            { "Phalanx" },
+            { "Ribbly Screwspigot" },
+            { "Plugger Spazzring" },
+            { "Ambassador Flamelash" },
+            { "The Seven", aliases = { "Doom'rel" } },
+            { "Magmus" },
+            { "Emperor Dagran Thaurissan", aliases = { "Princess Moira Bronzebeard" } },
+        },
+    },
+    {
+        name = "Blackrock Spire", ids = { 229 },
+        instanceNames = { "lower blackrock spire", "upper blackrock spire" },
+        bosses = {
+            { "Highlord Omokk" },
+            { "Shadow Hunter Vosh'gajin" },
+            { "War Master Voone" },
+            { "Mother Smolderweb" },
+            { "Urok Doomhowl" },
+            { "Quartermaster Zigris" },
+            { "Halycon" },
+            { "Gizrul the Slavener" },
+            { "Overlord Wyrmthalak" },
+            { "Pyroguard Emberseer" },
+            { "Solakar Flamewreath" },
+            { "Warchief Rend Blackhand", aliases = { "Gyth" } },
+            { "The Beast" },
+            { "General Drakkisath" },
+        },
+    },
+    {
+        name = "Dire Maul", ids = { 429 },
+        bosses = {
+            { "Zevrim Thornhoof" },
+            { "Hydrospawn" },
+            { "Lethtendris" },
+            { "Alzzin the Wildshaper" },
+            { "Tendris Warpwood" },
+            { "Illyanna Ravenoak" },
+            { "Magister Kalendris" },
+            { "Immol'thar" },
+            { "Prince Tortheldrin" },
+            { "Guard Mol'dar" },
+            { "Stomper Kreeg" },
+            { "Guard Fengus" },
+            { "Guard Slip'kik" },
+            { "Captain Kromcrush" },
+            { "King Gordok", aliases = { "Cho'Rush the Observer" } },
+        },
+    },
+    {
+        name = "Scholomance", ids = { 289 },
+        bosses = {
+            { "Kirtonos", aliases = { "Kirtonos the Herald" } },
+            { "Jandice Barov" },
+            { "Rattlegore" },
+            { "Marduk Blackpool" },
+            { "Vectus" },
+            { "Ras Frostwhisperer", aliases = { "Ras Frostwhisper" } },
+            { "Instructor Malicia" },
+            { "Doctor Theolen Krastinov" },
+            { "Lorekeeper Polkelt" },
+            { "The Ravenian" },
+            { "Lord Alexei Barov" },
+            { "Lady Illucia Barov" },
+            { "Darkmaster Gandling" },
+        },
+    },
+    {
+        name = "Stratholme", ids = { 329 },
+        bosses = {
+            { "Hearthsinger Forresten" },
+            { "Timmy the Cruel" },
+            { "Malor the Zealous", aliases = { "Commander Malor" } },
+            { "Cannon Master Willey", aliases = { "Willey Hopebreaker" } },
+            { "Archivist Galford", aliases = { "Instructor Galford" } },
+            { "Balnazzar", aliases = { "Grand Crusader Dathrohan" } },
+            { "The Unforgiven" },
+            { "Baroness Anastari" },
+            { "Nerub'enkan" },
+            { "Maleki the Pallid" },
+            { "Magistrate Barthilas" },
+            { "Ramstein the Gorger" },
+            { "Baron Rivendare", aliases = { "Lord Aurius Rivendare" } },
+        },
+    },
+    {
+        name = "Shaper's Terrace", instanceNames = { "the shaper's terrace" },
+        bosses = {
+            { "Titanosaur" }, { "Ravasaur Hunters", aliases = { "Izha'Rel", "Tor'Rel" } },
+            { "Thunderhoof" }, { "Venomridge" }, { "Direhorn Matriarch" },
+            { "Cinder" }, { "King Op" }, { "Snowtalon" }, { "Bolt" }, { "Vitrix" }, { "Nanaya" },
+        },
+    },
+    {
+        name = "Blackmaw Hold",
+        bosses = {
+            { "Withermaw" }, { "Impaan the Imprisoner" }, { "Elder Shaman Bloodmane" },
+            { "Bonesnout the Unbroken" }, { "Blackmaw Behemoth" }, { "Unbound Spirit" },
+            { "Varrox Bleakhoof" },
+        },
+    },
+}

@@ -56,10 +56,20 @@ Hover over the coin on the minimap to see:
 - bosses still waiting to be looted (the button also shows a red dot while a Real is waiting);
 - bosses you've met before in the current dungeon that you haven't looted today.
 
-Left-click opens the settings, right-click shows a test reminder, and dragging moves the button around the minimap.
+Left-click opens the settings, shift-click opens the boss checklist, right-click shows a test reminder, and dragging moves the button around the minimap.
+In the settings you can choose whether the tooltip lists the bosses you've looted, the ones you haven't, or both ("Minimap tooltip shows").
 It's a standard LibDBIcon button, so minimap-button collectors and broker bars (Titan Panel, ChocolateBar and others) list it as "Camelus' Tarnished Undermine Real Reminder".
 The same menu is in the addon list under the minimap (the Addon Compartment).
 `/trr minimap` hides or shows the button.
+
+## Boss checklist
+
+The settings window's **Bosses today** tab lists every boss that drops a Real, grouped by dungeon, with today's status: looted (and how many Reals), nothing for you, killed but not looted (red), not looted, below 55, or ignored.
+Each dungeon shows a count such as `13/13`. It's green when the dungeon is done and red when you killed a boss there without looting its Real.
+
+Open it with `/cturr bosses` or by shift-clicking the minimap button.
+Hover over a boss for details. Right-click a boss to ignore it if it doesn't exist in this version of the game or never drops a Real.
+The list starts from guide names and switches to the names the game reports as you kill bosses. Bosses the game reports that aren't in the list are added automatically.
 
 ## Customising the reminder
 
@@ -81,6 +91,7 @@ Changes apply right away, and the banner stays on screen as a preview while the 
 |---|---|
 | `/trr` (or `/reals`) | Reals carried, bosses looted today, time until the daily reset, and the bosses seen in this dungeon |
 | `/cturr` (or `/trr options`) | Opens the settings window. `/cturr <command>` also works like `/trr <command>` |
+| `/cturr bosses` | Opens today's boss checklist |
 | `/trr test` | Shows a test reminder |
 | `/trr clear` | Dismisses the waiting reminders (the X on the banner does the same) |
 | `/trr reset` | Forgets what you looted today on this character |
