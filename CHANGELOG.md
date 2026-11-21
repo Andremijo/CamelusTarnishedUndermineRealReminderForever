@@ -2,6 +2,18 @@
 
 Each `## vX.Y.Z` section below becomes the notes of that version's GitHub Release, published automatically when the version reaches `main`.
 
+## v1.3.0
+
+**Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.
+
+### New
+- **Uses the drop list from Wowhead's Forever data.** The addon now knows which dungeon bosses have actually been recorded dropping a Tarnished Undermine Real. The list comes from forevertwinking.com, whose item sources come from Wowhead's WoW: Forever database. It matched every boss confirmed in game so far. In Blackrock Depths, Blackrock Spire, Dire Maul, Scholomance and Stratholme:
+  - **On the list:** reminds you, whatever its level. **Bael'Gar** (54) and **Lord Incendius** now remind you; before, they were treated as below 55 and you could miss their Real.
+  - **Not on the list, and a rare, summoned or quest boss, or one the addon doesn't know** (such as Black Guard Swordsmith or Panzor the Invincible): no reminder. The checklist shows "not on the drop list".
+  - **Not on the list but a regular boss** (Balnazzar, Quartermaster Zigris, Solakar Flamewreath, Goraluk Anvilcrack, the Dire Maul North guards, Ring of the Law): reminds you as before, because the list may just be missing reports. If such a boss's corpse has no Real for you, the addon learns that and stops reminding you about it.
+- **Shaper's Terrace and Blackmaw Hold** aren't on the list yet, so they work as before.
+- **Bosses you've confirmed in game,** and what the addon learned from your loot, still come first.
+
 ## v1.2.7
 
 **Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.

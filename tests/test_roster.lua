@@ -80,11 +80,12 @@ check(table.concat(names, ",") == "Blackrock Depths,Lower Blackrock Spire,Upper 
     "every dungeon part listed in Wowhead's order: " .. table.concat(names, ","))
 local scholo = group("Scholomance")
 check(#scholo.rows == 15 and scholo.total == 13 and scholo.done == 0, "Scholomance: 15 journal bosses, 13 counted, none done")
-check(rowOf(scholo, "Kormok").status == "optional", "summoned boss shown as optional")
+check(rowOf(scholo, "Kormok").status == "low" and R.STATUS.low.text(rowOf(scholo, "Kormok")) == "not on the drop list",
+    "summoned boss not on the drop list")
 local brd = group("Blackrock Depths")
 check(#brd.rows == 21, "BRD: Wowhead's 18 journal entries plus Ribbly, Plugger and The Vault, which the game reports as bosses")
 check(rowOf(brd, "Lord Roccor").status == "low", "Lord Roccor (51) shown as below 55")
-check(brd.total == 9, "BRD counts level 55+ bosses plus Darkvire (54, confirmed Real), not the Chest of the Seven (" .. brd.total .. ")")
+check(brd.total == 11, "BRD counts the 10 drop-list bosses plus Ring of the Law (" .. brd.total .. ")")
 check(rowOf(brd, "The Seven").status == "low", "Chest of the Seven drops no Real")
 check(rowOf(brd, "Ribbly Screwspigot").status == "low", "Ribbly listed as dropping no Real")
 
@@ -130,7 +131,7 @@ enter("Blackrock Depths", 230)
 kill("Lord Roccor", 56)
 brd = group("Blackrock Depths")
 check(rowOf(brd, "Lord Roccor").status == "low" and #ns.CDB.pending == 1, "Roccor read as 56: still below 55, no reminder")
-check(brd.total == 9, "BRD total unchanged (" .. brd.total .. ")")
+check(brd.total == 11, "BRD total unchanged (" .. brd.total .. ")")
 
 -- A boss's corpse with nothing for us counts as done for today.
 local angerforge = kill("General Angerforge", 57)
@@ -145,7 +146,7 @@ R.ToggleIgnore(rowOf(brd, "Magmus"))
 brd = group("Blackrock Depths")
 -- 9 counted minus Magmus. (Angerforge, done today as "nothing for you",
 -- still counts today; from tomorrow he's learned as no-Real.)
-check(rowOf(brd, "Magmus").status == "ignored" and brd.total == 8, "ignored boss left out of the count (" .. brd.total .. ")")
+check(rowOf(brd, "Magmus").status == "ignored" and brd.total == 10, "ignored boss left out of the count (" .. brd.total .. ")")
 R.ToggleIgnore(rowOf(brd, "Magmus"))
 check(rowOf(group("Blackrock Depths"), "Magmus").status == "todo", "un-ignored")
 

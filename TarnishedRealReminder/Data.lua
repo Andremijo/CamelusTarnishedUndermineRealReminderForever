@@ -244,13 +244,13 @@ ns.ROSTER = {
         -- The four raptors (summoned with Power Crystals) open the way to the
         -- final boss, Nanaya. Wowhead mentions optional dinosaurs too, without
         -- names; they are added automatically when killed.
-        name = "The Shaper's Terrace", instanceNames = { "shaper's terrace", "the shaper's terrace" },
+        name = "The Shaper's Terrace", new = true, instanceNames = { "shaper's terrace", "the shaper's terrace" },
         bosses = {
             { "Cinder" }, { "Snowtalon" }, { "Bolt" }, { "Vitrix" }, { "Nanaya" },
         },
     },
     {
-        name = "Blackmaw Hold",
+        name = "Blackmaw Hold", new = true,
         bosses = {
             { "Withermaw" },
             { "Impaan the Imprisoner" },
@@ -318,7 +318,7 @@ levels({
     ["Fineous Darkvire"] = 54,       -- Classic
     ["Pyromancer Loregrain"] = 52,   -- Classic
     ["Bael'gar"] = 54,               -- Classic
-    ["Lord Incendius"] = 53,         -- Classic
+    ["Lord Incendius"] = 55,
     ["General Angerforge"] = 57,
     ["Golem Lord Argelmach"] = 57,
     ["Phalanx"] = 55,
@@ -377,3 +377,89 @@ levels({
     ["Skul"] = 58, ["Baroness Anastari"] = 59, ["Ramstein the Gorger"] = 61, ["Baron Rivendare"] = 62,
     ["Cannon Master Willey"] = 60,
 })
+
+------------------------------------------------------------------------------
+-- Drop list: every dungeon NPC recorded dropping a Tarnished Undermine Real,
+-- from the "Dropped By" list on forevertwinking.com/items/tarnished-undermine-real,
+-- whose item sources come from Wowhead's WoW: Forever database (via
+-- Polestar), fetched November 2026. (The % is how often players saw it drop;
+-- it's below 100% because each boss gives you one only once per day.) That
+-- list also has raid bosses, which suggests part of it is Season of
+-- Discovery data, but for the dungeons it matched every boss confirmed in
+-- game. It has nothing yet for Shaper's Terrace or Blackmaw Hold.
+--
+-- In the five classic dungeons the addon uses it as:
+--   on the list                          -> drops a Real (Bael'Gar and Lord
+--                                           Incendius do although they're
+--                                           near or below level 55);
+--   not on it, and a rare, summoned or
+--   quest boss ("optional"), or a boss
+--   the boss list doesn't know           -> no Real;
+--   not on it but a regular boss         -> decided by level as before (the
+--                                           list may just lack reports), and
+--                                           learning silences it if it
+--                                           doesn't drop one.
+------------------------------------------------------------------------------
+ns.DROP_LIST = {}
+for _, name in ipairs({
+    "Malor the Zealous", -- Stratholme, level 60, 88.76%
+    "Illyanna Ravenoak", -- Dire Maul, level 60, 71.7%
+    "Vectus", -- Scholomance, level 60, 71.1%
+    "Lethtendris", -- Dire Maul, level 57, 70.59%
+    "Marduk Blackpool", -- Scholomance, level 58, 70.34%
+    "Ezra Grimm", -- Stratholme, level 61, 69.81%
+    "Lorekeeper Polkelt", -- Scholomance, level 60, 69.66%
+    "Instructor Malicia", -- Scholomance, level 60, 68.09%
+    "Prince Tortheldrin", -- Dire Maul, level 60 - 61, 67.92%
+    "Pusillin", -- Dire Maul, level 57, 67.31%
+    "Tendris Warpwood", -- Dire Maul, level 60, 67.06%
+    "Fineous Darkvire", -- Blackrock Depths, level 54, 67.01%
+    "Phalanx", -- Blackrock Depths, level 55, 66.87%
+    "Hurley Blackbreath", -- Blackrock Depths, level 55, 66.84%
+    "Doctor Theolen Krastinov", -- Scholomance, level 60, 66.31%
+    "Kirtonos the Herald", -- Scholomance, level 60, 66.08%
+    "Darkmaster Gandling", -- Scholomance, level 61, 65.71%
+    "Rattlegore", -- Scholomance, level 61, 65.45%
+    "Golem Lord Argelmach", -- Blackrock Depths, level 57, 64.89%
+    "Lady Illucia Barov", -- Scholomance, level 60, 64.87%
+    "Ambassador Flamelash", -- Blackrock Depths, level 57, 64.85%
+    "Jandice Barov", -- Scholomance, level 61, 64.62%
+    "Bael'Gar", -- Blackrock Depths, level 54, 64.47%
+    "Emperor Dagran Thaurissan", -- Blackrock Depths, level 59, 64.43%
+    "The Ravenian", -- Scholomance, level 60, 64.19%
+    "General Angerforge", -- Blackrock Depths, level 57, 64.09%
+    "Ras Frostwhisper", -- Scholomance, level 62, 64.04%
+    "Lord Alexei Barov", -- Scholomance, level 60, 62.82%
+    "Lord Incendius", -- Blackrock Depths, level 55, 61.66%
+    "Magmus", -- Blackrock Depths, level 57, 59.84%
+    "Mother Smolderweb", -- Blackrock Spire, level 59, 59.73%
+    "Shadow Hunter Vosh'gajin", -- Blackrock Spire, level 58, 59.66%
+    "Baron Rivendare", -- Stratholme, level 62, 59%
+    "Baroness Anastari", -- Stratholme, level 59, 58.64%
+    "Maleki the Pallid", -- Stratholme, level 61, 58.12%
+    "Warchief Rend Blackhand", -- Blackrock Spire, level 62, 58%
+    "Nerub'enkan", -- Stratholme, level 60, 57.74%
+    "Halycon", -- Blackrock Spire, level 59, 57.71%
+    "Gizrul the Slavener", -- Blackrock Spire, level 60, 57.68%
+    "Pyroguard Emberseer", -- Blackrock Spire, level 60, 57.45%
+    "Overlord Wyrmthalak", -- Blackrock Spire, level 60, 57.39%
+    "Urok Doomhowl", -- Blackrock Spire, level 60, 57.3%
+    "King Gordok", -- Dire Maul, level 61 - 62, 56.82%
+    "The Beast", -- Blackrock Spire, level 62, 56.57%
+    "War Master Voone", -- Blackrock Spire, level 58, 55.87%
+    "Ramstein the Gorger", -- Stratholme, level 61, 54.7%
+    "General Drakkisath", -- Blackrock Spire, level 62, 54.07%
+    "Magister Kalendris", -- Dire Maul, level 60, 51.79%
+    "Highlord Omokk", -- Blackrock Spire, level 59, 51.05%
+    "Postmaster Malown", -- Stratholme, level 60, 48.57%
+    "Timmy the Cruel", -- Stratholme, level 58, 47.42%
+    "Cannon Master Willey", -- Stratholme, level 60, 47.2%
+    "Magistrate Barthilas", -- Stratholme, level 58, 46.4%
+    "Balzaphon", -- Stratholme, level 60, 46.34%
+    "Archivist Galford", -- Stratholme, level 60, 43.93%
+    "The Unforgiven", -- Stratholme, level 57, 41.13%
+    "Hydrospawn", -- Dire Maul, level 57, 35.77%
+    "Immol'thar", -- Dire Maul, level 61, 34.23%
+    "Zevrim Thornhoof", -- Dire Maul, level 57, 31.94%
+    "Alzzin the Wildshaper", -- Dire Maul, level 58, 31.94%
+}) do ns.DROP_LIST[name:lower()] = true end

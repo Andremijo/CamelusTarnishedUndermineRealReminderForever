@@ -21,6 +21,7 @@ Roster.STATUS = {
     low     = { color = { 0.42, 0.42, 0.42 },
                 text = function(r)
                     if r.noReal then return "drops no Real" end
+                    if r.notOnList then return "not on the drop list" end
                     if r.learnedNoReal then return "no Real (learned)" end
                     if type(r.level) == "number" and r.level > 0 then return "level " .. r.level .. ", no Real" end
                     return "below 55, no Real"
@@ -150,6 +151,45 @@ function Roster.ListedLevel(bossName, instanceName)
     return level, false
 end
 
+-- Is the boss on the drop list (Data.lua ns.DROP_LIST)? Checks every name
+-- the boss list knows for it, and loose name matches.
+function Roster.OnDropList(bossName, instanceName)
+    if not bossName then return false end
+    if ns.DROP_LIST[bossName:lower()] then return true end
+    local b = listedBoss(bossName, instanceName)
+    if b then
+        if ns.DROP_LIST[b[1]:lower()] then return true end
+        for _, a in ipairs(b.aliases or {}) do
+            if ns.DROP_LIST[a:lower()] then return true end
+        end
+    end
+    for listed in pairs(ns.DROP_LIST) do
+        if Roster.Match(listed, bossName) then return true end
+    end
+    return false
+end
+
+-- Does the drop list cover this dungeon (the five classic ones, not the new
+-- Forever dungeons)?
+function Roster.DropListCovers(instanceName)
+    local list = defIndexesFor(instanceName)
+    if #list == 0 then return false end
+    for _, i in ipairs(list) do
+        if ns.ROSTER[i].new then return false end
+    end
+    return true
+end
+
+-- What the drop list says: "yes" (on it), "no" (not on it and a rare,
+-- summoned or unknown boss in a covered dungeon), or nil (no verdict).
+function Roster.DropListVerdict(bossName, instanceName)
+    if not Roster.DropListCovers(instanceName) then return nil end
+    if Roster.OnDropList(bossName, instanceName) then return "yes" end
+    local b = listedBoss(bossName, instanceName)
+    if not b or b.optional then return "no" end
+    return nil
+end
+
 function Roster.IsVariable(bossName, instanceName)
     local b = listedBoss(bossName, instanceName)
     return b and b.variable and true or false
@@ -170,6 +210,7 @@ function Roster.Build()
     end
     for _, def in ipairs(ns.ROSTER) do
         local g = newGroup(def.name)
+        g.def = def
         for _, b in ipairs(def.bosses) do
             local names = { b[1] }
             for _, a in ipairs(b.aliases or {}) do names[#names + 1] = a end
@@ -252,12 +293,24 @@ function Roster.Build()
                     if DB.realBosses[n:lower()] or ns.REAL_BOSSES[n:lower()] then learnedReal = true end
                 end
             end
+            local covered = g.def and not g.def.new
+            local onList = false
+            if covered then
+                for _, n in ipairs(r.names) do
+                    if ns.DROP_LIST[n:lower()] then onList = true end
+                end
+            end
+            r.notOnList = covered and not onList and (r.optional or not r.static) and true or false
             if r.noReal then
                 r.low = true
             elseif r.real or learnedReal then
                 r.low = false -- drops a Real whatever its level
             elseif learned then
-                r.low, r.learnedNoReal = true, true -- its corpse had no Real: beats any level
+                r.low, r.learnedNoReal = true, true
+            elseif onList then
+                r.low = false -- on the drop list, whatever its level
+            elseif r.notOnList then
+                r.low = true
             elseif type(level) == "number" and level > 0 then
                 r.low = level < ns.MIN_BOSS_LEVEL
             end
