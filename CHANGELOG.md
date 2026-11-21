@@ -4,7 +4,7 @@ Each `## vX.Y.Z` section below becomes the notes of that version's GitHub Releas
 
 ## v1.1.0
 
-**Install:** download the zip below and unzip it into your WoW: Forever `Interface\AddOns` folder. Then type `/reload` and `/trr options`.
+**Install:** in WoWUp, use **Install from URL** with `https://github.com/Andremijo/CamelusTarnishedUndermineRealReminderForever`. Or download the `-forever.zip` below and unzip it into your WoW: Forever `Interface\AddOns` folder. Then type `/reload` and `/trr options`.
 
 ### New
 - **Minimap button.** Hover over it to see today's looted bosses grouped by dungeon, bosses still waiting, Reals carried and the time until the daily reset. A red dot shows while a Real is waiting. Left-click opens settings, right-click shows a test reminder, and dragging moves it. It's also in the addon list under the minimap.
