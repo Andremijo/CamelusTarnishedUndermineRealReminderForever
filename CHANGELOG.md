@@ -2,6 +2,13 @@
 
 Each `## vX.Y.Z` section below becomes the notes of that version's GitHub Release, published automatically when the version reaches `main`.
 
+## v1.2.5
+
+**Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.
+
+### Fixed
+- **The Vault no longer reminds you.** The game reports The Vault in Blackrock Depths, which comes after Warder Stilgiss, as a boss. It drops no Real (confirmed in game). It's now its own entry in the Blackrock Depths list, and the checklist shows it as "drops no Real".
+
 ## v1.2.4
 
 **Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.
