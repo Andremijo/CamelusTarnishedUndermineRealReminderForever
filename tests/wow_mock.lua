@@ -109,8 +109,16 @@ function frameMethods.SetTexture(self, t) self.texture = t end
 function frameMethods.SetColorTexture(self, r, g, b, a) self.color = { r, g, b, a } end
 function frameMethods.SetTextColor(self, r, g, b, a) self.textColor = { r, g, b, a } end
 function frameMethods.SetBackdrop(self, b) self.backdrop = b end
-function frameMethods.CreateFontString(self) return T.makeFrame("FontString") end
-function frameMethods.CreateTexture(self) return T.makeFrame("Texture") end
+function frameMethods.CreateFontString(self) local o = T.makeFrame("FontString"); o.parent = self; return o end
+function frameMethods.CreateTexture(self) local o = T.makeFrame("Texture"); o.parent = self; return o end
+function frameMethods.GetParent(self) return self.parent end
+function frameMethods.CreateAnimationGroup(self)
+    local g = T.makeFrame("AnimationGroup"); g.parent = self
+    g.CreateAnimation = function(grp) local an = T.makeFrame("Animation"); an.parent = grp; return an end
+    return g
+end
+function frameMethods.SetParent(self, p) self.parent = p end
+function frameMethods.GetName(self) return self.name end
 
 function T.makeFrame(otype, name)
     local o = newObject(otype)
@@ -119,7 +127,25 @@ function T.makeFrame(otype, name)
     if name then _G[name] = o end
     return o
 end
-function CreateFrame(otype, name) return T.makeFrame(otype or "Frame", name) end
+function securecallfunction(fn, ...) return fn(...) end
+function securecall(fn, ...) return fn(...) end
+
+-- Tooltips record their lines; T.lastTooltip is the one most recently filled.
+local function makeTooltip(tt)
+    tt.lines = {}
+    function tt:SetOwner() self.lines = {}; T.lastTooltip = self end
+    function tt:ClearLines() self.lines = {} end
+    function tt:AddLine(t) table.insert(self.lines, t); T.lastTooltip = self end
+    function tt:AddDoubleLine(a, b) table.insert(self.lines, a .. " | " .. b); T.lastTooltip = self end
+    return tt
+end
+
+function CreateFrame(otype, name, parent)
+    local o = T.makeFrame(otype or "Frame", name)
+    o.parent, o.name = parent, name
+    if otype == "GameTooltip" then makeTooltip(o) end
+    return o
+end
 
 function T.click(frame, button)
     assert(frame.scripts.OnClick, "frame has no OnClick")
@@ -144,12 +170,8 @@ function GetCursorPosition() return 600, 500 end
 T.soundFiles = {}
 function PlaySoundFile(f) table.insert(T.soundFiles, f) end
 
-GameTooltip = T.makeFrame("Frame", "GameTooltip")
-GameTooltip.lines = {}
-function GameTooltip:SetOwner() self.lines = {} end
-function GameTooltip:AddLine(t) table.insert(self.lines, t) end
-function GameTooltip:AddDoubleLine(a, b) table.insert(self.lines, a .. " | " .. b) end
-function T.tooltipText() return table.concat(GameTooltip.lines, "\n") end
+GameTooltip = makeTooltip(T.makeFrame("GameTooltip", "GameTooltip"))
+function T.tooltipText() return table.concat((T.lastTooltip or GameTooltip).lines, "\n") end
 
 ColorPickerFrame = T.makeFrame("Frame", "ColorPickerFrame")
 function ColorPickerFrame:SetupColorPickerAndShow(info) self.info = info end

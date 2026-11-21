@@ -13,8 +13,8 @@ TarnishedRealReminderDB = { sound = false, raidWarning = true, nagSeconds = 30, 
 
 local ns = {}
 for line in io.lines(ADDON_DIR .. "TarnishedRealReminder.toc") do
-    local file = line:match("^([%w_]+%.lua)%s*$")
-    if file then assert(loadfile(ADDON_DIR .. file))("TarnishedRealReminder", ns) end
+    local file = line:match("^([%w_%-%.\\/]+%.lua)%s*$")
+    if file then assert(loadfile(ADDON_DIR .. file:gsub("\\", "/")))("TarnishedRealReminder", ns) end
 end
 T.instance = { name = "Blackrock Depths", type = "party", id = 230 }
 T.fire("ADDON_LOADED", "TarnishedRealReminder")
@@ -33,9 +33,17 @@ DB.sound = true
 check(T.settingsPanel ~= nil and T.settingsCategory ~= nil, "registered in the game's Settings panel")
 
 -- Minimap button.
-local mm = TarnishedRealReminderMinimapButton
+local DBI = LibStub("LibDBIcon-1.0")
+local LDB = LibStub("LibDataBroker-1.1")
+local NAME = "Camelus' Tarnished Undermine Real Reminder"
+check(LDB:GetDataObjectByName(NAME) ~= nil, "LibDataBroker launcher registered under the full name")
+check(DBI:IsRegistered(NAME), "LibDBIcon button registered")
+local mm = DBI:GetMinimapButton(NAME)
 check(mm ~= nil and mm:IsShown(), "minimap button shown")
-check(not mm.dot:IsShown(), "no red dot with nothing pending")
+check(_G["LibDBIcon10_" .. NAME] == mm, "button uses LibDBIcon's standard frame name")
+check(DB.minimap.minimapPos == 215, "1.1.0 button angle carried over to LibDBIcon")
+T.advance(1.1)
+check(mm.trrDot and not mm.trrDot:IsShown(), "no red dot with nothing pending")
 
 -- A kill and a loot, so the tooltip has something to list.
 local function kill(name, level, guid)
@@ -59,7 +67,7 @@ end
 
 kill("Emperor Dagran Thaurissan", 59, "G-emp")
 T.advance(1.1)
-check(mm.dot:IsShown(), "red dot while a Real waits")
+check(mm.trrDot:IsShown(), "red dot while a Real waits")
 mm.scripts.OnEnter(mm)
 check(T.tooltipText():find("Still to loot", 1, true) ~= nil, "tooltip lists the waiting boss")
 loot("G-emp", 3)
@@ -70,6 +78,7 @@ T.advance(1.1)
 
 mm.scripts.OnEnter(mm)
 local tip = T.tooltipText()
+check((T.lastTooltip or GameTooltip).lines[1] == NAME, "tooltip headline is the full addon name")
 check(tip:find("Reals carried | 4", 1, true) ~= nil, "tooltip shows Reals carried")
 check(tip:find("Daily reset in", 1, true) ~= nil, "tooltip shows the reset timer")
 check(tip:find("Blackrock Depths", 1, true) ~= nil, "tooltip groups by dungeon")
@@ -92,9 +101,9 @@ T.click(mm, "LeftButton")
 local win = TarnishedRealReminderOptions
 check(win ~= nil and win:IsShown(), "left-click opens the settings window")
 mm.scripts.OnDragStart(mm)
-mm.scripts.OnUpdate(mm)
+if mm.scripts.OnUpdate then mm.scripts.OnUpdate(mm) end
 mm.scripts.OnDragStop(mm)
-check(math.abs(DB.minimap.angle - 45) < 0.01, "dragging the minimap button saves its angle")
+check(DB.minimap.minimapPos ~= 215, "dragging the minimap button saves its position")
 
 -- With the window open and nothing pending, the banner shows as a preview.
 local banner = TarnishedRealReminderBanner
@@ -222,6 +231,15 @@ check(not banner:IsShown(), "banner hidden when settings close with nothing pend
 ns.slash("options")
 check(win:IsShown(), "/trr options opens the window")
 win:Hide()
+
+-- /cturr opens the settings; with a word after it, it works like /trr.
+check(SlashCmdList.CTURR ~= nil and SLASH_CTURR1 == "/cturr", "/cturr registered")
+SlashCmdList.CTURR("")
+check(win:IsShown(), "/cturr opens the settings")
+win:Hide()
+SlashCmdList.CTURR("test")
+check(#ns.CDB.pending == 1, "/cturr test works like /trr test")
+ns.dismissAll()
 
 print(string.format("%d passed, %d failed", passed, failed))
 if failed > 0 then error("tests failed") end
