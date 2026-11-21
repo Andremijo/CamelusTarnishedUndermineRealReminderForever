@@ -24,7 +24,7 @@ T.advance(3.5)
 -- Upgrade from 1.0.0 keeps old choices and fills in the new ones.
 local DB = ns.DB
 check(DB.sound == false and DB.nagSeconds == 30, "old settings kept")
-check(DB.raidWarning == false, "upgrade from 1.1.x switches the doubled raid-warning text off once")
+check(DB.raidWarning == true, "upgrade keeps the warning-text choice")
 check(DB.settingsVersion == 2, "upgrade records settings version 2")
 check(DB.point[3] == 10 and DB.point[4] == -200, "old banner position kept")
 check(DB.display and DB.display.width == 480 and DB.display.animation == "pulse", "new look defaults added")
@@ -195,6 +195,38 @@ for _, intro in ipairs(ns.INTROS) do
     check(banner.body.alpha == 1 and banner.body.scale == 1, "entrance " .. intro.key .. " settles")
 end
 
+-- Warning text: preview, position, size, colour, drag, reset.
+local warn = TarnishedRealReminderWarning
+T.advance(6) -- let the earlier test warning run out
+check(warn:IsShown() and warn.text:GetText():find("Preview", 1, true) == nil
+      and warn.text:GetText():find("Emperor", 1, true) ~= nil, "warning text previews while settings are open")
+DB.warning.point = nil
+ns.Banner.ApplyWarning()
+local wy -- the warning's horizontal slider: the last "Horizontal position" (column 4)
+for _, c in ipairs(controls) do
+    if c.kind == "slider" and c.labelText == "Horizontal position" then wy = c end
+end
+check(wy ~= nil and wy ~= controls[5], "warning position sliders exist")
+wy.slider:SetValue(300)
+check(DB.warning.point and DB.warning.point[3] == 300, "warning horizontal slider moves it")
+DB.warning.size = 40; DB.warning.color = { 0, 1, 0, 1 }; DB.warning.font = "skurri"
+ns.Banner.ApplyWarning()
+check(warn.text.font[1] == "Fonts\\SKURRI.TTF" and warn.text.font[2] == 40, "warning font and size applied")
+check(warn.text.textColor[2] == 1 and warn.text.textColor[1] == 0, "warning colour applied")
+DB.locked = false; ns.Banner.Update()
+warn.scripts.OnDragStart(warn); warn.scripts.OnDragStop(warn)
+check(DB.warning.point[1] == "TOP" and DB.warning.point[4] == -150, "dragging the warning saves its position")
+DB.locked = true; ns.Banner.Update()
+local resetW = false
+for _, f in ipairs(T.frames) do
+    if f._type == "Button" and f.label and f.label:GetText() == "Reset warning to defaults" then T.click(f); resetW = true end
+end
+check(resetW and DB.warning.point == nil and DB.warning.size == 24, "warning reset to defaults")
+for _, f in ipairs(T.frames) do
+    if f._type == "Button" and f.label and f.label:GetText() == "Show test warning" then T.click(f) end
+end
+check(warn.text:GetText():find("Test Boss", 1, true) ~= nil, "test warning button shows a warning")
+
 -- Sounds.
 DB.soundKey = "custom"; DB.soundCustom = "Interface\\AddOns\\MySounds\\coin.ogg"
 ns.PlayAlertSound(true)
@@ -230,6 +262,8 @@ check(mm:IsShown(), "/trr minimap shows it again")
 -- Closing the window ends the preview.
 win:Hide()
 check(not banner:IsShown(), "banner hidden when settings close with nothing pending")
+T.advance(6)
+check(not TarnishedRealReminderWarning:IsShown(), "warning preview hidden when settings close")
 ns.slash("options")
 check(win:IsShown(), "/trr options opens the window")
 win:Hide()

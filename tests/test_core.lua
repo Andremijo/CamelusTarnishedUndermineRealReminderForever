@@ -15,6 +15,9 @@ local function load()
             chunk("TarnishedRealReminder", ns)
         end
     end
+    -- Record every warning text the addon shows.
+    local show = ns.Banner.ShowWarning
+    ns.Banner.ShowWarning = function(text) table.insert(T.warnings, text); return show(text) end
     T.fire("ADDON_LOADED", "TarnishedRealReminder")
     T.fire("PLAYER_ENTERING_WORLD")
     T.advance(3.5)
@@ -67,7 +70,7 @@ local function banner() return TarnishedRealReminderBanner end
 load()
 check(ns.DB ~= nil and ns.CDB ~= nil, "saved tables created")
 check(SlashCmdList.TARNISHEDREALREMINDER ~= nil, "slash command registered")
-check(ns.DB.raidWarning == false, "raid-warning text is off by default (it would double the banner text)")
+check(ns.DB.raidWarning == true, "warning text is on by default")
 check(ns.DB.settingsVersion == 2, "settings version recorded")
 
 -- 1. Outside a dungeon nothing happens.
@@ -79,21 +82,27 @@ enter("Blackrock Depths", 230)
 killBoss("Lord Roccor", 51, "G-roccor")
 check(pending() == 0, "level 51 boss gives no reminder")
 
--- 3a. With the defaults, a kill shows the banner and plays a sound, but adds
---     no raid-warning text on top of the banner.
+-- 3a. A kill shows the banner, plays a sound and shows the addon's own
+--     warning text under the banner; the game's RaidWarningFrame (which sat
+--     on top of the banner) is never used.
 enter("Blackrock Depths", 230)
 local sounds0, warnings0 = T.sounds, #T.warnings
 killBoss("Golem Lord Argelmach", 58, "G-golem0")
+local warn = TarnishedRealReminderWarning
 check(banner() and banner():IsShown(), "banner shown by default")
 check(T.sounds > sounds0, "sound by default")
-check(#T.warnings == warnings0, "no raid-warning text by default")
+check(#T.warnings == warnings0 + 1 and warn:IsShown(), "own warning text shown")
+check(warn.text:GetText():find("Golem Lord Argelmach", 1, true) ~= nil, "warning names the boss")
+check(#T.blizzardWarnings == 0, "the game's raid-warning frame is not used")
+T.advance(6)
+check(not warn:IsShown(), "warning text fades away after its duration")
+check(banner():IsShown(), "banner stays until looted")
+ns.DB.raidWarning = false
 T.advance(25)
-check(#T.warnings == warnings0, "nag repeats without raid-warning text by default")
+check(#T.warnings == warnings0 + 1, "no warning text when switched off")
+ns.DB.raidWarning = true
 ns.dismissAll()
 ns.CDB.looted["golem lord argelmach"] = nil
-
--- The rest of this file checks the raid-warning output too, so switch it on.
-ns.DB.raidWarning = true
 
 -- 3. BRD boss 59: reminder, sound, banner.
 local sounds = T.sounds

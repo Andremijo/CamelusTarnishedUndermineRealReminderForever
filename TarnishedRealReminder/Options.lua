@@ -162,7 +162,7 @@ local function slider(col, text, minV, maxV, step, get, set, fmt)
         s:SetValue(v); show(v)
         updating = false
     end
-    row.slider, row.kind, row.min, row.max = s, "slider", minV, maxV
+    row.slider, row.kind, row.min, row.max, row.labelText = s, "slider", minV, maxV, text
     return register(row)
 end
 
@@ -307,7 +307,7 @@ local function times(v) return string.format("%.1fx", v) end
 
 local function build()
     win = CreateFrame("Frame", "TarnishedRealReminderOptions", UIParent)
-    win:SetSize(3 * COL_W + 4 * 12, 700)
+    win:SetSize(4 * COL_W + 5 * 12, 700)
     win:SetPoint("CENTER")
     win:SetFrameStrata("DIALOG")
     win:SetToplevel(true)
@@ -384,13 +384,49 @@ local function build()
     buttonRow(c3, "Play sound", function() ns.PlayAlertSound(true) end)
     slider(c3, "Repeat sound every (0 = off)", 0, 120, 5, function() return ns.DB.nagSeconds end,
         function(v) ns.DB.nagSeconds = v end, function(v) return v == 0 and "off" or (v .. " s") end)
-    checkbox(c3, "Raid warning text too (overlaps a banner at the top)", function() return ns.DB.raidWarning end, function(v) ns.DB.raidWarning = v end)
     checkbox(c3, "Chat message", function() return ns.DB.chatAlerts end, function(v) ns.DB.chatAlerts = v end)
     checkbox(c3, "Flash the taskbar icon", function() return ns.DB.flashTaskbar end,
         function(v) ns.DB.flashTaskbar = v end)
     checkbox(c3, "Minimap button", function() return not ns.DB.minimap.hide end, function(v)
         ns.DB.minimap.hide = not v
         if ns.Minimap then ns.Minimap.Refresh() end
+    end)
+
+    -- Column 4: the big warning text.
+    local function W() return ns.DB.warning end
+    local DEFAULT_WP = { "TOP", "TOP", 0, -250 }
+    local function wpoint() return W().point or DEFAULT_WP end
+    local function setWOffset(i, v)
+        if not W().point then W().point = { DEFAULT_WP[1], DEFAULT_WP[2], DEFAULT_WP[3], DEFAULT_WP[4] } end
+        W().point[i] = v
+    end
+    local function applyWarning() if ns.Banner then ns.Banner.ApplyWarning() end end
+    local c4 = column(win, "Warning text", 12 * 4 + COL_W * 3)
+    local note = label(c4, "Big text that names the boss. It sits under the banner by default. Untick Lock (Banner column) to drag it.",
+        "GameFontDisableSmall")
+    note:SetWordWrap(true)
+    c4:place(note, 40)
+    checkbox(c4, "Show warning text", function() return ns.DB.raidWarning end, function(v) ns.DB.raidWarning = v end)
+    slider(c4, "Horizontal position", -1200, 1200, 1, function() return wpoint()[3] end,
+        function(v) setWOffset(3, v); applyWarning() end, px)
+    slider(c4, "Vertical position", -900, 900, 1, function() return wpoint()[4] end,
+        function(v) setWOffset(4, v); applyWarning() end, px)
+    slider(c4, "Text size", 10, 60, 1, function() return W().size end,
+        function(v) W().size = v; applyWarning() end, px)
+    colorSwatch(c4, "Text colour", function() return W().color end, true)
+    selector(c4, "Font", ns.FONTS, function() return W().font end, function(v) W().font = v; applyWarning() end)
+    selector(c4, "Font outline", ns.OUTLINES, function() return W().outline end,
+        function(v) W().outline = v; applyWarning() end)
+    slider(c4, "Shown for", 1, 15, 1, function() return W().duration end,
+        function(v) W().duration = v end, function(v) return v .. " s" end)
+    buttonRow(c4, "Show test warning", function()
+        if ns.Banner then ns.Banner.ShowWarning("Loot the Tarnished Undermine Real from Test Boss!") end
+    end)
+    buttonRow(c4, "Reset warning to defaults", function()
+        ns.DB.warning = {}
+        ns.applyDefaults(ns.DB.warning, ns.DEFAULTS.warning)
+        Options.Refresh()
+        applyWarning()
     end)
 
     -- Footer.

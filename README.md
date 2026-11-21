@@ -70,7 +70,8 @@ Changes apply right away, and the banner stays on screen as a preview while the 
 |---|---|
 | Banner | Width, height, scale, opacity, horizontal and vertical position (or untick Lock and drag it), frame layer, background colour, border style (none, solid line, gold dialog, silver dialog, tooltip), border colour and size |
 | Text and icon | Title text, font, outline, alignment, title size and colour, boss-name size and colour, icon on or off, icon side and size, the hint line, the close button |
-| Animation and sound | Animation (pulse, flash, bounce, shake, grow and shrink, glowing border, or none) and its speed; entrance effect (fade, zoom, slide, or none); sound on or off; built-in sound choice or your own file path or FileDataID; sound channel; repeat interval; raid-warning text; chat message; taskbar flash; minimap button |
+| Animation and sound | Animation (pulse, flash, bounce, shake, grow and shrink, glowing border, or none) and its speed; entrance effect (fade, zoom, slide, or none); sound on or off; built-in sound choice or your own file path or FileDataID; sound channel; repeat interval; chat message; taskbar flash; minimap button |
+| Warning text | The big text that names the boss: on or off, position (sliders, or untick Lock and drag it), size, colour, font, outline, and how long it stays before fading. By default it sits under the banner. It's the addon's own frame, so raid leaders' warnings aren't affected |
 
 **Reset look to defaults** puts the banner back the way it started without touching your other settings.
 
@@ -85,7 +86,7 @@ Changes apply right away, and the banner stays on screen as a preview while the 
 | `/trr reset` | Forgets what you looted today on this character |
 | `/trr add` | Counts the dungeon you're in as a Real dungeon |
 | `/trr unlock` / `/trr lock` | Move the banner |
-| `/trr sound`, `/trr warning` | Turns the sound or the raid-warning text on or off |
+| `/trr sound`, `/trr warning` | Turns the sound or the warning text on or off |
 | `/trr minimap` | Hides or shows the minimap button |
 | `/trr nag <seconds>` | Sets how often the sound repeats while a Real is waiting (0 turns it off) |
 | `/trr debug` | Prints why each kill did or didn't create a reminder |

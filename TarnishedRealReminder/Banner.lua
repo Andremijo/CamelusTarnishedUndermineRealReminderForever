@@ -250,6 +250,7 @@ function Banner.Apply()
     body.close:SetShown(d.showClose and true or false)
 
     Banner.Update()
+    if Banner.ApplyWarning then Banner.ApplyWarning() end
 end
 
 ------------------------------------------------------------------------------
@@ -282,6 +283,7 @@ function Banner.Update()
     else
         f:Hide()
     end
+    Banner.UpdateWarningPreview()
 end
 
 function Banner.PlayIntro()
@@ -342,3 +344,107 @@ function Banner.Animate(dt)
     body:ClearAllPoints()
     body:SetPoint("CENTER", f, "CENTER", ox / scale, oy / scale)
 end
+
+------------------------------------------------------------------------------
+-- Warning text
+--
+-- The addon's own big centre-screen text, in place of the game's
+-- RaidWarningFrame (which raid leaders' warnings also use, so the addon
+-- leaves it alone). It can be moved, sized, coloured and timed in the
+-- settings, and by default sits under the banner so the two never overlap.
+------------------------------------------------------------------------------
+
+local W
+local SAMPLE_WARNING = "Loot the Tarnished Undermine Real from Emperor Dagran Thaurissan!"
+ns.DEFAULT_WARNING_POINT = { "TOP", "TOP", 0, -250 }
+
+local function WD() return ns.DB.warning end
+
+local function warningPreview()
+    return (ns.Options and ns.Options.IsShown()) or not ns.DB.locked
+end
+
+local function saveWarningPoint()
+    local point, _, relPoint, x, y = W:GetPoint(1)
+    WD().point = { point or "TOP", relPoint or "TOP", math.floor((x or 0) + 0.5), math.floor((y or 0) + 0.5) }
+    if ns.Options then ns.Options.Refresh() end
+end
+
+local function buildWarning()
+    if W then return end
+    W = CreateFrame("Frame", "TarnishedRealReminderWarning", UIParent)
+    W:SetSize(1000, 60)
+    W:SetFrameStrata("HIGH")
+    W:SetClampedToScreen(true)
+    W:SetMovable(true)
+    W:RegisterForDrag("LeftButton")
+    W:SetScript("OnDragStart", function(self) if not ns.DB.locked then self:StartMoving() end end)
+    W:SetScript("OnDragStop", function(self) self:StopMovingOrSizing(); saveWarningPoint() end)
+    W.text = W:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
+    W.text:SetAllPoints()
+    W.text:SetJustifyH("CENTER")
+    W.text:SetJustifyV("MIDDLE")
+    -- A faint box while it can be dragged, so it is easy to grab.
+    W.box = W:CreateTexture(nil, "BACKGROUND")
+    W.box:SetAllPoints()
+    W.box:SetColorTexture(1, 1, 1, 0.08)
+    W.holdUntil = nil
+    W:SetScript("OnUpdate", function(self)
+        if not self.holdUntil then return end
+        local left = self.holdUntil - GetTime()
+        if left <= 0 then
+            self.holdUntil = nil
+            self:SetAlpha(1)
+            if warningPreview() and ns.DB.raidWarning then
+                self.text:SetText(SAMPLE_WARNING) -- back to the preview sample
+            else
+                self:Hide()
+            end
+        elseif left < 1 then
+            self:SetAlpha(left) -- fade out over the last second
+        else
+            self:SetAlpha(1)
+        end
+    end)
+    W:Hide()
+end
+
+function Banner.ApplyWarning()
+    buildWarning()
+    local w = WD()
+    W:ClearAllPoints()
+    local p = w.point or ns.DEFAULT_WARNING_POINT
+    W:SetPoint(p[1], UIParent, p[2], p[3], p[4])
+    W:SetHeight(math.max(30, (w.size or 24) * 2))
+    setFont(W.text, w, w.size or 24)
+    W.text:SetTextColor(rgba(w.color, { 1, 0.45, 0.1, 1 }))
+    Banner.UpdateWarningPreview()
+end
+
+-- While the settings are open or the frames are unlocked, keep a sample up.
+function Banner.UpdateWarningPreview()
+    if not ns.DB then return end
+    buildWarning()
+    if not W.applied then W.applied = true; return Banner.ApplyWarning() end
+    local preview = warningPreview() and ns.DB.raidWarning
+    W:EnableMouse(not ns.DB.locked)
+    W.box:SetShown(not ns.DB.locked)
+    if preview then
+        if not W.holdUntil then W.text:SetText(SAMPLE_WARNING) end
+        W:SetAlpha(1)
+        W:Show()
+    elseif not W.holdUntil then
+        W:Hide()
+    end
+end
+
+function Banner.ShowWarning(text)
+    buildWarning()
+    if not W.applied then W.applied = true; Banner.ApplyWarning() end
+    W.text:SetText(text)
+    W.holdUntil = GetTime() + math.max(1, WD().duration or 5)
+    W:SetAlpha(1)
+    W:Show()
+end
+
+function Banner.WarningFrame() return W end
