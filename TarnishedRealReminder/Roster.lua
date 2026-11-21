@@ -18,7 +18,8 @@ Roster.STATUS = {
     missed  = { color = { 1, 0.35, 0.35 },  text = "killed, not looted" },
     todo    = { color = { 1, 1, 1 },        text = "not looted" },
     optional = { color = { 0.62, 0.62, 0.62 }, text = "optional" },
-    low     = { color = { 0.42, 0.42, 0.42 }, text = "below 55, no Real" },
+    low     = { color = { 0.42, 0.42, 0.42 },
+                text = function(r) return r.learnedNoReal and "no Real (learned)" or "below 55, no Real" end },
     ignored = { color = { 0.42, 0.42, 0.42 }, text = "ignored" },
 }
 
@@ -208,7 +209,13 @@ function Roster.Build()
             local level
             for _, n in ipairs(r.names) do level = level or DB.bossLevels[n:lower()] end
             r.level = level
-            if type(level) == "number" and level > 0 then r.low = level < ns.MIN_BOSS_LEVEL end
+            if type(level) == "number" and level > 0 then
+                r.low = level < ns.MIN_BOSS_LEVEL
+            else
+                for _, n in ipairs(r.names) do
+                    if DB.noRealBosses[n:lower()] then r.low, r.learnedNoReal = true, true end
+                end
+            end
             r.ignored = DB.ignoredBosses[Roster.IgnoreKey(r)] and true or false
 
             if r.looted then

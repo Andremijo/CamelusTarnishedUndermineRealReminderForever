@@ -13,6 +13,14 @@ Each `## vX.Y.Z` section below becomes the notes of that version's GitHub Releas
   - **Unknown bosses** whose level can't be read still get a reminder, so a Real is never missed.
 - A waiting reminder left over for such a boss disappears at the next loading screen.
 
+### New
+- **Learns which bosses drop no Real.** If you open a boss's corpse and there's no Real for you on a day you hadn't looted that boss, it doesn't drop Reals, typically because it's below level 55. The addon remembers this and won't remind you about that boss again, so bosses below 55 that the list doesn't mark stop after the first time. Possible examples are Ring of the Law, or Dire Maul East and North if those really are below 55 in Forever.
+  - It only learns from the boss's own corpse (matched by id), never from trash loot.
+  - A level read in game still wins.
+  - Looting a Real from a learned boss unlearns it.
+  - The checklist shows such bosses as "no Real (learned)".
+  - `/trr relearn` forgets everything learned.
+
 ## v1.2.0
 
 **Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.

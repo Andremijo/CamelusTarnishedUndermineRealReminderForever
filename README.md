@@ -33,7 +33,9 @@ Bosses of level 55 or higher in:
 - **Blackmaw Hold** (new, Azshara)
 
 The addon reads each boss's level during the fight, so bosses under 55 (Lord Roccor, for example) are skipped.
-If the game won't show the level, the addon reminds you anyway, because a needless reminder is better than a missed Real.
+In dungeons the game often won't tell addons a boss's level. Then the addon uses its boss list, which marks the Blackrock Depths bosses below 55, such as High Interrogator Gerstahn.
+For a boss it knows nothing about, it reminds you anyway, because a needless reminder is better than a missed Real.
+If you then open that boss's corpse and there's no Real for you, the addon learns that the boss doesn't drop one and won't remind you again (`/trr relearn` undoes this).
 
 Each boss gives you one Real a day. Once you've looted it, you won't be reminded for that boss again until the daily reset.
 
@@ -97,6 +99,7 @@ Changes apply right away, and the banner stays on screen as a preview while the 
 | `/trr test` | Shows a test reminder |
 | `/trr clear` | Dismisses the waiting reminders (the X on the banner does the same) |
 | `/trr reset` | Forgets what you looted today on this character |
+| `/trr relearn` | Forgets which bosses the addon learned drop no Real |
 | `/trr add` | Counts the dungeon you're in as a Real dungeon |
 | `/trr unlock` / `/trr lock` | Move the banner |
 | `/trr sound`, `/trr warning` | Turns the sound or the warning text on or off |

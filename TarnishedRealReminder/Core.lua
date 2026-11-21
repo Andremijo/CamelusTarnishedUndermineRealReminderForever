@@ -138,6 +138,7 @@ local DEFAULTS = {
     bossLevels = {},        -- lower-cased boss name -> level
     knownBosses = {},       -- instance name -> { boss name -> true }
     ignoredBosses = {},     -- normalised boss name -> true (hidden from the checklist counts)
+    noRealBosses = {},      -- lower-cased boss name -> name: learned that its corpse never has a Real
     encounterEventsSeen = false,
 }
 
@@ -358,13 +359,17 @@ ns.alert = alert
 
 -- Does this boss drop a Real? Decided by, in order:
 --   1. the level read in game, when it could be read (a real level, not "??");
---   2. the boss list's "below 55" flag (Data.lua), because in dungeons this
+--   2. learned: its corpse had no Real for you on a day you hadn't looted it;
+--   3. the boss list's "below 55" flag (Data.lua), because in dungeons this
 --      client often keeps unit levels secret from addons;
---   3. otherwise yes, so a Real is never missed.
+--   4. otherwise yes, so a Real is never missed.
 -- Returns eligible, and a reason for the debug output.
 local function bossEligible(name, level, instanceName)
     if type(level) == "number" and level > 0 then
         return level >= ns.MIN_BOSS_LEVEL, "level " .. level
+    end
+    if name and DB.noRealBosses[name:lower()] then
+        return false, "its corpse had no Real before (learned)"
     end
     if ns.Roster and ns.Roster.IsListedLow
         and ns.Roster.IsListedLow(name, instanceName or currentInstance()) then
@@ -430,6 +435,9 @@ local function resolvePending(index, how, count)
     if p.test then updateBanner(); return end
     CDB.looted[p.key] = { name = p.name, t = serverNow(), n = count, none = (how == "none") or nil,
                           instance = p.instance }
+    if how == "looted" and DB.noRealBosses[p.key] then
+        DB.noRealBosses[p.key] = nil -- it does drop one after all
+    end
     if how == "looted" then
         say(string.format("Got %s from |cffffffff%s|r. %d carried.",
             (count and count > 1) and (count .. " Reals") or "your Real", p.name, state.realCount or 0))
@@ -670,10 +678,17 @@ local function onLootOpened()
         state.lastLootSources = info.sources
         return
     end
-    -- A boss corpse we were waiting on, with no Real for us: already taken today.
+    -- A boss corpse we were waiting on (matched by GUID), with no Real for us.
+    -- We only wait on bosses not looted today, so this boss doesn't drop a
+    -- Real at all (below level 55): remember that and stop reminding.
     local idx = matchPendingByGuids(info.sources)
     if idx then
-        debug(CDB.pending[idx].name .. " had no Real for you (already looted today?).")
+        local p = CDB.pending[idx]
+        if not p.test then
+            DB.noRealBosses[p.key] = p.name
+            say(string.format("|cffffffff%s|r had no Real for you, so it doesn't drop one. "
+                .. "You won't be reminded about it again (/trr relearn undoes this).", p.name))
+        end
         resolvePending(idx, "none")
     end
 end
@@ -758,6 +773,7 @@ local HELP = {
     "/trr test - show a test reminder",
     "/trr clear - forget the bosses still waiting to be looted",
     "/trr reset - forget everything looted today on this character",
+    "/trr relearn - forget which bosses were learned to drop no Real",
     "/trr add - count the dungeon you are in as a Real dungeon",
     "/trr unlock | lock - move the reminder banner",
     "/trr sound | warning - toggle the sound / raid warning text",
@@ -785,6 +801,11 @@ local function slash(msg)
     elseif cmd == "clear" then
         ns.dismissAll()
         say("Cleared.")
+    elseif cmd == "relearn" then
+        local n = 0
+        for _ in pairs(DB.noRealBosses) do n = n + 1 end
+        wipe(DB.noRealBosses)
+        say(n .. " learned boss" .. (n == 1 and "" or "es") .. " forgotten. They will remind you again.")
     elseif cmd == "reset" then
         wipe(CDB.looted); wipe(CDB.pending); updateBanner()
         say("Today's list wiped for this character.")
