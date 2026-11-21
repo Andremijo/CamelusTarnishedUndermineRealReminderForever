@@ -90,6 +90,13 @@ kill("Ribbly Screwspigot", nil, false)
 check(#CDB.pending == 0, "Ribbly never reminds (confirmed no Real)")
 r = row("Blackrock Depths", "Ribbly Screwspigot")
 check(r and r.status == "low" and ns.Roster.STATUS.low.text(r) == "drops no Real", "checklist: Ribbly drops no Real")
+-- Plugger Spazzring (55): reported as a boss in game, confirmed no Real, even
+-- with his level 55 read.
+kill("Plugger Spazzring", 55)
+kill("Plugger Spazzring", SECRET)
+check(#CDB.pending == 0, "Plugger never reminds (confirmed no Real, though level 55)")
+r = row("Blackrock Depths", "Plugger Spazzring")
+check(r and r.status == "low" and ns.Roster.STATUS.low.text(r) == "drops no Real", "checklist: Plugger drops no Real")
 
 -- High Interrogator Gerstahn and Lord Roccor: confirmed in game, no Real,
 -- whatever level is read (even a wrong 58).
