@@ -66,8 +66,10 @@ ns.ELIGIBLE_INSTANCE_NAMES = {
 --             and the row then shows the game's name.
 --   optional  rares, summoned and quest bosses: listed, but only counted
 --             once you get a Real from them.
---   noReal    confirmed in game not to drop a Real even though it is level
---             55+; never reminds, whatever level the addon reads.
+--   noReal    confirmed in game not to drop a Real, whatever its level
+--             (Warder Stilgiss is 56 and drops none).
+--   real      confirmed in game to drop a Real, whatever its level (Fineous
+--             Darkvire is 54 and drops one). The "55+" rule is only a guide.
 --   variable  the boss you fight changes from run to run (Ring of the Law
 --             picks one challenger; some are level 55+, some aren't). Its
 --             eligibility comes from the challenger seen in the fight, and the
@@ -90,7 +92,8 @@ ns.ROSTER = {
             { "Houndmaster Grebmar" },
             { "Ring of the Law", variable = true, aliases = { "Ring of Law", "Gorosh the Dervish", "Grizzle", "Eviscerator",
                                              "Ok'thor the Breaker", "Anub'shiah", "Hedrum the Creeper" } },
-            { "Fineous Darkvire" },
+            -- Level 54, but confirmed in game to drop a Real.
+            { "Fineous Darkvire", real = true },
             { "Pyromancer Loregrain" },
             { "Bael'gar" },
             { "Lord Incendius" },
@@ -253,13 +256,15 @@ ns.ROSTER = {
     },
 }
 
--- Bosses known not to drop a Real (noReal in the list), by every name.
-ns.NO_REAL_BOSSES = {}
+-- Bosses confirmed not to drop a Real (noReal) and confirmed to drop one
+-- (real), by every name.
+ns.NO_REAL_BOSSES, ns.REAL_BOSSES = {}, {}
 for _, def in ipairs(ns.ROSTER) do
     for _, b in ipairs(def.bosses) do
-        if b.noReal then
-            ns.NO_REAL_BOSSES[b[1]:lower()] = true
-            for _, a in ipairs(b.aliases or {}) do ns.NO_REAL_BOSSES[a:lower()] = true end
+        local set = (b.noReal and ns.NO_REAL_BOSSES) or (b.real and ns.REAL_BOSSES)
+        if set then
+            set[b[1]:lower()] = true
+            for _, a in ipairs(b.aliases or {}) do set[a:lower()] = true end
         end
     end
 end
@@ -278,7 +283,9 @@ end
 
 ------------------------------------------------------------------------------
 -- Boss levels, from Wowhead's WoW: Forever database (wowhead.com/forever/
--- npc=...), November 2026. Only level 55+ bosses drop a Real. Used when the
+-- npc=...), November 2026. Bosses of level 55+ usually drop a Real, so the
+-- level is the addon's first guess; what happens in game (the real/noReal
+-- flags above, and what the addon learns from loot) always wins. Used when the
 -- game won't tell the addon a boss's level (it often won't in dungeons); a
 -- level read in game always wins. Values marked "Classic" weren't found for
 -- Forever and are the Classic level (High Interrogator Gerstahn, confirmed
