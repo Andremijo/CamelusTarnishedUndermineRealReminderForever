@@ -2,6 +2,13 @@
 
 Each `## vX.Y.Z` section below becomes the notes of that version's GitHub Release, published automatically when the version reaches `main`.
 
+## v1.2.4
+
+**Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.
+
+### Fixed
+- **The Chest of the Seven no longer reminds you.** It's the chest you get after the seven dwarves in Blackrock Depths, not a boss, and it drops no Real. Neither the encounter nor any of the dwarves (Doom'rel, Gloom'rel, Seeth'rel, Vile'rel, Dope'rel, Anger'rel and Hate'rel) reminds you. The checklist shows it as "drops no Real" and no longer counts it, so Blackrock Depths now has 9 Real bosses.
+
 ## v1.2.3
 
 **Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.
