@@ -57,12 +57,13 @@ Hover over the coin on the minimap to see:
 - bosses you've met before in the current dungeon that you haven't looted today.
 
 Left-click opens the settings, right-click shows a test reminder, and dragging moves the button around the minimap.
+It's a standard LibDBIcon button, so minimap-button collectors and broker bars (Titan Panel, ChocolateBar and others) list it as "Camelus' Tarnished Undermine Real Reminder".
 The same menu is in the addon list under the minimap (the Addon Compartment).
 `/trr minimap` hides or shows the button.
 
 ## Customising the reminder
 
-Open the settings with `/trr options`, a left-click on the minimap button, or **Options > AddOns > Camelus' Real Reminder**.
+Open the settings with `/cturr` (or `/trr options`), a left-click on the minimap button, or **Options > AddOns > Camelus' Real Reminder**.
 Changes apply right away, and the banner stays on screen as a preview while the window is open.
 
 | Section | Settings |
@@ -78,7 +79,7 @@ Changes apply right away, and the banner stays on screen as a preview while the 
 | Command | What it does |
 |---|---|
 | `/trr` (or `/reals`) | Reals carried, bosses looted today, time until the daily reset, and the bosses seen in this dungeon |
-| `/trr options` | Opens the settings window |
+| `/cturr` (or `/trr options`) | Opens the settings window. `/cturr <command>` also works like `/trr <command>` |
 | `/trr test` | Shows a test reminder |
 | `/trr clear` | Dismisses the waiting reminders (the X on the banner does the same) |
 | `/trr reset` | Forgets what you looted today on this character |

@@ -9,9 +9,9 @@ local function load()
     ns = {}
     -- Load the files in the order the .toc lists them.
     for line in io.lines(ADDON_DIR .. "TarnishedRealReminder.toc") do
-        local file = line:match("^([%w_]+%.lua)%s*$")
+        local file = line:match("^([%w_%-%.\\/]+%.lua)%s*$")
         if file then
-            local chunk = assert(loadfile(ADDON_DIR .. file))
+            local chunk = assert(loadfile(ADDON_DIR .. file:gsub("\\", "/")))
             chunk("TarnishedRealReminder", ns)
         end
     end

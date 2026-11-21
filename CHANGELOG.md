@@ -2,6 +2,21 @@
 
 Each `## vX.Y.Z` section below becomes the notes of that version's GitHub Release, published automatically when the version reaches `main`.
 
+## v1.1.1
+
+**Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.
+
+### Fixed
+- The minimap button is now a standard LibDBIcon button. Minimap-button collectors and broker bars recognise it, so they show its name and tooltip instead of "This is a custom button. Please ask the addon author to use the standard LibDBIcon library instead."
+- The minimap tooltip's headline is now "Camelus' Tarnished Undermine Real Reminder".
+
+### New
+- `/cturr` opens the settings window. `/cturr <command>` works like `/trr <command>`.
+
+### Notes
+- Bundles LibStub, CallbackHandler-1.0, LibDataBroker-1.1 and LibDBIcon-1.0 (see `Libs/README.md`).
+- Your minimap button position from v1.1.0 is kept.
+
 ## v1.1.0
 
 **Install:** in WoWUp, use **Install from URL** with `https://github.com/Andremijo/CamelusTarnishedUndermineRealReminderForever`. Or download the `-forever.zip` below and unzip it into your WoW: Forever `Interface\AddOns` folder. Then type `/reload` and `/trr options`.

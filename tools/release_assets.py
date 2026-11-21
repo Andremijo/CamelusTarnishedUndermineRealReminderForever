@@ -59,7 +59,8 @@ def check_zip(path, interface):
         fail(f"zip is missing {toc_in_zip}")
     with zipfile.ZipFile(path) as z:
         toc_text = z.read(toc_in_zip).decode("utf-8")
-        listed = [l.strip() for l in toc_text.splitlines() if l.strip().endswith(".lua") and not l.startswith("#")]
+        listed = [l.strip().replace("\\", "/") for l in toc_text.splitlines()
+                  if l.strip().endswith(".lua") and not l.startswith("#")]
         for lua in listed:
             if f"{ADDON}/{lua}" not in names:
                 fail(f"zip is missing {lua}, which the .toc loads")

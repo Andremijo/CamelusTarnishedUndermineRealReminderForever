@@ -664,7 +664,7 @@ end
 
 local HELP = {
     "/trr - status: Reals carried, bosses looted today, time to reset",
-    "/trr options - open the settings window (also: minimap button)",
+    "/cturr or /trr options - open the settings window (also: minimap button)",
     "/trr test - show a test reminder",
     "/trr clear - forget the bosses still waiting to be looted",
     "/trr reset - forget everything looted today on this character",
@@ -726,6 +726,13 @@ end
 SLASH_TARNISHEDREALREMINDER1 = "/trr"
 SLASH_TARNISHEDREALREMINDER2 = "/reals"
 SlashCmdList["TARNISHEDREALREMINDER"] = slash
+
+-- /cturr: short for Camelus' Tarnished Undermine Real Reminder. On its own it
+-- opens the settings; with a word after it, it works like /trr.
+SLASH_CTURR1 = "/cturr"
+SlashCmdList["CTURR"] = function(msg)
+    if (msg or ""):match("^%s*$") then slash("options") else slash(msg) end
+end
 ns.slash = slash
 
 ------------------------------------------------------------------------------
