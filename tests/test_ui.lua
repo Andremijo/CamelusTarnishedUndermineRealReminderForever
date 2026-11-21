@@ -24,6 +24,8 @@ T.advance(3.5)
 -- Upgrade from 1.0.0 keeps old choices and fills in the new ones.
 local DB = ns.DB
 check(DB.sound == false and DB.nagSeconds == 30, "old settings kept")
+check(DB.raidWarning == false, "upgrade from 1.1.x switches the doubled raid-warning text off once")
+check(DB.settingsVersion == 2, "upgrade records settings version 2")
 check(DB.point[3] == 10 and DB.point[4] == -200, "old banner position kept")
 check(DB.display and DB.display.width == 480 and DB.display.animation == "pulse", "new look defaults added")
 check(DB.minimap and DB.minimap.hide == false, "minimap defaults added")

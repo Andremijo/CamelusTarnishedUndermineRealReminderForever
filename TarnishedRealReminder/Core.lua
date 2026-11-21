@@ -99,7 +99,7 @@ local DEFAULTS = {
     soundKey = "raid_warning", -- see ns.SOUNDS
     soundCustom = "",         -- sound file path or FileDataID when soundKey == "custom"
     soundChannel = "Master",
-    raidWarning = true,       -- big text in the middle of the screen
+    raidWarning = false,      -- also show raid-warning text mid-screen (it sits where the banner is, so off by default)
     chatAlerts = true,        -- a chat line on each kill
     flashTaskbar = true,
     nagSeconds = 20,          -- repeat the sound while a Real is waiting (0 = off)
@@ -153,6 +153,13 @@ local function initDB()
     TarnishedRealReminderDB = TarnishedRealReminderDB or {}
     TarnishedRealReminderCharDB = TarnishedRealReminderCharDB or {}
     DB, CDB = TarnishedRealReminderDB, TarnishedRealReminderCharDB
+    -- Settings version 2 (addon 1.1.2): the raid-warning text doubled the
+    -- banner's text on screen, so it is now off by default. Installs from
+    -- before that had it on by default; switch it off for them once.
+    if DB.settingsVersion == nil and DB.raidWarning ~= nil then
+        DB.raidWarning = false
+    end
+    DB.settingsVersion = 2
     applyDefaults(DB, DEFAULTS)
     applyDefaults(CDB, {
         resetAt = nil,

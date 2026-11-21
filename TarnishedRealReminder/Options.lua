@@ -384,7 +384,7 @@ local function build()
     buttonRow(c3, "Play sound", function() ns.PlayAlertSound(true) end)
     slider(c3, "Repeat sound every (0 = off)", 0, 120, 5, function() return ns.DB.nagSeconds end,
         function(v) ns.DB.nagSeconds = v end, function(v) return v == 0 and "off" or (v .. " s") end)
-    checkbox(c3, "Raid warning text", function() return ns.DB.raidWarning end, function(v) ns.DB.raidWarning = v end)
+    checkbox(c3, "Raid warning text too (overlaps a banner at the top)", function() return ns.DB.raidWarning end, function(v) ns.DB.raidWarning = v end)
     checkbox(c3, "Chat message", function() return ns.DB.chatAlerts end, function(v) ns.DB.chatAlerts = v end)
     checkbox(c3, "Flash the taskbar icon", function() return ns.DB.flashTaskbar end,
         function(v) ns.DB.flashTaskbar = v end)

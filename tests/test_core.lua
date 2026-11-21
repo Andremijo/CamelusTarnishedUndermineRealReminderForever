@@ -67,6 +67,8 @@ local function banner() return TarnishedRealReminderBanner end
 load()
 check(ns.DB ~= nil and ns.CDB ~= nil, "saved tables created")
 check(SlashCmdList.TARNISHEDREALREMINDER ~= nil, "slash command registered")
+check(ns.DB.raidWarning == false, "raid-warning text is off by default (it would double the banner text)")
+check(ns.DB.settingsVersion == 2, "settings version recorded")
 
 -- 1. Outside a dungeon nothing happens.
 killBoss("Hogger", 11, "G-hogger")
@@ -76,6 +78,22 @@ check(pending() == 0, "no reminder outside a Real dungeon")
 enter("Blackrock Depths", 230)
 killBoss("Lord Roccor", 51, "G-roccor")
 check(pending() == 0, "level 51 boss gives no reminder")
+
+-- 3a. With the defaults, a kill shows the banner and plays a sound, but adds
+--     no raid-warning text on top of the banner.
+enter("Blackrock Depths", 230)
+local sounds0, warnings0 = T.sounds, #T.warnings
+killBoss("Golem Lord Argelmach", 58, "G-golem0")
+check(banner() and banner():IsShown(), "banner shown by default")
+check(T.sounds > sounds0, "sound by default")
+check(#T.warnings == warnings0, "no raid-warning text by default")
+T.advance(25)
+check(#T.warnings == warnings0, "nag repeats without raid-warning text by default")
+ns.dismissAll()
+ns.CDB.looted["golem lord argelmach"] = nil
+
+-- The rest of this file checks the raid-warning output too, so switch it on.
+ns.DB.raidWarning = true
 
 -- 3. BRD boss 59: reminder, sound, banner.
 local sounds = T.sounds

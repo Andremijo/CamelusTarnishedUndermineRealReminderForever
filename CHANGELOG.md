@@ -2,6 +2,14 @@
 
 Each `## vX.Y.Z` section below becomes the notes of that version's GitHub Release, published automatically when the version reaches `main`.
 
+## v1.1.2
+
+**Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.
+
+### Fixed
+- The reminder no longer shows its text twice. The game's raid-warning text ("Loot the Tarnished Undermine Real from …") appeared in the middle of the screen right on top of the banner. Since the banner already says the same thing, the raid-warning text is now off by default, and updating switches it off once for existing installs too.
+- To bring the raid-warning text back, open `/cturr` and tick **Raid warning text too** under Animation and sound. If you do, move the banner (untick **Lock** and drag it, or use the position sliders) so the two don't overlap.
+
 ## v1.1.1
 
 **Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.
