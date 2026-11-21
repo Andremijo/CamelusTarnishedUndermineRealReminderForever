@@ -1,0 +1,71 @@
+# Publishes a GitHub Release when a version tag (v1.2.3) is pushed.
+#
+# 1. Bump "## Version" in TarnishedRealReminder/TarnishedRealReminder.toc
+# 2. Add a "## v1.2.3" section to CHANGELOG.md
+# 3. Run tools/build_zip.sh and commit the zip in releases/
+# 4. Push the tag:  git tag v1.2.3 && git push origin v1.2.3
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the tag matches the addon version
+        id: version
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          version=$(sed -n 's/^## Version: *//p' TarnishedRealReminder/TarnishedRealReminder.toc | tr -d '\r')
+          if [ "v${version}" != "${tag}" ]; then
+            echo "Tag ${tag} does not match ## Version ${version} in the .toc" >&2
+            exit 1
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run the tests
+        run: |
+          pip install lupa
+          python3 tests/run_tests.py
+
+      - name: Find or build the zip
+        id: zip
+        run: |
+          name="Camelus' Tarnished Undermine Real Reminder v${{ steps.version.outputs.version }}.zip"
+          if [ ! -f "releases/${name}" ]; then
+            tools/build_zip.sh
+          fi
+          echo "path=releases/${name}" >> "$GITHUB_OUTPUT"
+          echo "name=${name}" >> "$GITHUB_OUTPUT"
+
+      - name: Release notes from CHANGELOG.md
+        run: |
+          awk -v want="## v${{ steps.version.outputs.version }}" '
+            $0 == want { on = 1; next }
+            on && /^## / { exit }
+            on { print }
+          ' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then
+            echo "Release of version ${{ steps.version.outputs.version }}." > notes.md
+          fi
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            "${{ steps.zip.outputs.path }}#${{ steps.zip.outputs.name }}" \
+            --title "Camelus' Tarnished Undermine Real Reminder ${GITHUB_REF_NAME}" \
+            --notes-file notes.md \
+            --latest

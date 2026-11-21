@@ -3,7 +3,9 @@
 An addon that reminds you to loot your **Tarnished Undermine Real** from every boss that drops one,
 once per boss per day.
 
-**Download:** the latest zip is in [`releases/`](releases/). Each zip has the version in its name. To build one, bump `## Version` in the `.toc` and run `tools/build_zip.sh`.
+**Download:** get the zip from the latest [GitHub Release](../../releases/latest). The same zips are also kept in [`releases/`](releases/), each with its version in the name.
+
+**Making a release:** bump `## Version` in the `.toc`, add a `## vX.Y.Z` section to `CHANGELOG.md`, run `tools/build_zip.sh`, commit, then push a tag such as `v1.2.0`. The Release workflow runs the tests and publishes the GitHub Release with the zip and the changelog section as its notes.
 
 When an eligible boss dies, you get a pulsing banner, a raid-warning sound and the boss's name.
 The reminder stays up until the Real is in your bags. It repeats every 20 seconds when you're out of combat.
