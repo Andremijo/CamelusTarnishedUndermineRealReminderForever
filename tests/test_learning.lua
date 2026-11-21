@@ -98,6 +98,13 @@ check(#CDB.pending == 0, "Plugger never reminds (confirmed no Real, though level
 r = row("Blackrock Depths", "Plugger Spazzring")
 check(r and r.status == "low" and ns.Roster.STATUS.low.text(r) == "drops no Real", "checklist: Plugger drops no Real")
 
+-- Chest of the Seven: a chest, not a boss. Neither the encounter nor any of
+-- the seven dwarves (level 55-57) reminds.
+kill("Chest of the Seven", SECRET)
+kill("The Seven", 57, "Doom'rel")
+kill("Hate'rel", 55)
+check(#CDB.pending == 0, "Chest of the Seven and its dwarves never remind")
+
 -- High Interrogator Gerstahn and Lord Roccor: confirmed in game, no Real,
 -- whatever level is read (even a wrong 58).
 kill("High Interrogator Gerstahn", 58)

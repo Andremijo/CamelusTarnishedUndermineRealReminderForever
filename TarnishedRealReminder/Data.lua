@@ -102,7 +102,9 @@ ns.ROSTER = {
             { "Phalanx" },
             { "Hurley Blackbreath" },
             { "Ambassador Flamelash" },
-            { "Chest of the Seven", aliases = { "The Seven", "Doom'rel" } },
+            -- A chest you get after the seven dwarves, not a boss: confirmed no Real.
+            { "Chest of the Seven", noReal = true, aliases = { "The Seven", "Doom'rel", "Gloom'rel", "Seeth'rel",
+                                                               "Vile'rel", "Dope'rel", "Anger'rel", "Hate'rel" } },
             { "Magmus" },
             { "Emperor Dagran Thaurissan", aliases = { "Princess Moira Bronzebeard" } },
             -- Level 56/55, but players report no Real from it.

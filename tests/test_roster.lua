@@ -84,7 +84,8 @@ check(rowOf(scholo, "Kormok").status == "optional", "summoned boss shown as opti
 local brd = group("Blackrock Depths")
 check(#brd.rows == 20, "BRD: Wowhead's 18 journal entries plus Ribbly and Plugger, whom the game reports as bosses")
 check(rowOf(brd, "Lord Roccor").status == "low", "Lord Roccor (51) shown as below 55")
-check(brd.total == 10, "BRD counts level 55+ bosses plus Darkvire (54, confirmed Real) (" .. brd.total .. ")")
+check(brd.total == 9, "BRD counts level 55+ bosses plus Darkvire (54, confirmed Real), not the Chest of the Seven (" .. brd.total .. ")")
+check(rowOf(brd, "The Seven").status == "low", "Chest of the Seven drops no Real")
 check(rowOf(brd, "Ribbly Screwspigot").status == "low", "Ribbly listed as dropping no Real")
 
 -- The run from the screenshot: all 13 Scholomance bosses, with the game's names.
@@ -129,7 +130,7 @@ enter("Blackrock Depths", 230)
 kill("Lord Roccor", 56)
 brd = group("Blackrock Depths")
 check(rowOf(brd, "Lord Roccor").status == "low" and #ns.CDB.pending == 1, "Roccor read as 56: still below 55, no reminder")
-check(brd.total == 10, "BRD total unchanged (" .. brd.total .. ")")
+check(brd.total == 9, "BRD total unchanged (" .. brd.total .. ")")
 
 -- A boss's corpse with nothing for us counts as done for today.
 local angerforge = kill("General Angerforge", 57)
@@ -140,14 +141,13 @@ brd = group("Blackrock Depths")
 check(rowOf(brd, "General Angerforge").status == "none" and brd.done == 1, "corpse without a Real counts as done, nothing for you")
 
 -- Ignore a boss.
-local seven = rowOf(brd, "The Seven")
-R.ToggleIgnore(seven)
+R.ToggleIgnore(rowOf(brd, "Magmus"))
 brd = group("Blackrock Depths")
--- 10 counted minus The Seven. (Angerforge, done today as "nothing for you",
+-- 9 counted minus Magmus. (Angerforge, done today as "nothing for you",
 -- still counts today; from tomorrow he's learned as no-Real.)
-check(rowOf(brd, "The Seven").status == "ignored" and brd.total == 9, "ignored boss left out of the count (" .. brd.total .. ")")
-R.ToggleIgnore(rowOf(brd, "The Seven"))
-check(rowOf(group("Blackrock Depths"), "The Seven").status == "todo", "un-ignored")
+check(rowOf(brd, "Magmus").status == "ignored" and brd.total == 8, "ignored boss left out of the count (" .. brd.total .. ")")
+R.ToggleIgnore(rowOf(brd, "Magmus"))
+check(rowOf(group("Blackrock Depths"), "Magmus").status == "todo", "un-ignored")
 
 -- A dungeon learned from loot gets its own group.
 enter("Some Future Dungeon", 99903)
