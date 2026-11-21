@@ -61,10 +61,13 @@ function T.advance(sec)
 end
 
 -- Frames ---------------------------------------------------------------------
-local function newObject(kind)
-    local o = { kind = kind, shown = (kind ~= "Frame"), scripts = {}, events = {}, text = nil }
+-- Unknown methods (capitalised keys) are no-ops; unknown fields stay nil.
+local function newObject(otype)
+    local o = { _type = otype, shown = true, scripts = {}, events = {}, text = nil,
+                w = 0, h = 0, scale = 1, alpha = 1 }
     return setmetatable(o, { __index = function(self, k)
-        return function() end -- any unknown method is a no-op
+        if type(k) == "string" and k:match("^[A-Z]") then return function() end end
+        return nil
     end })
 end
 
@@ -74,24 +77,54 @@ function frameMethods.RegisterEvent(self, e)
     self.events[e] = true
 end
 function frameMethods.SetScript(self, k, fn) self.scripts[k] = fn end
-function frameMethods.Show(self) self.shown = true end
-function frameMethods.Hide(self) self.shown = false end
+function frameMethods.GetScript(self, k) return self.scripts[k] end
+function frameMethods.Show(self) local was = self.shown; self.shown = true
+    if not was and self.scripts.OnShow then self.scripts.OnShow(self) end end
+function frameMethods.Hide(self) local was = self.shown; self.shown = false
+    if was and self.scripts.OnHide then self.scripts.OnHide(self) end end
+function frameMethods.SetShown(self, v) if v then self:Show() else self:Hide() end end
 function frameMethods.IsShown(self) return self.shown end
 function frameMethods.SetText(self, t) self.text = t end
 function frameMethods.GetText(self) return self.text end
 function frameMethods.GetPoint() return "TOP", nil, "TOP", 0, -150 end
+function frameMethods.SetSize(self, w, h) self.w, self.h = w, h end
+function frameMethods.SetWidth(self, w) self.w = w end
+function frameMethods.SetHeight(self, h) self.h = h end
+function frameMethods.GetWidth(self) return self.w end
+function frameMethods.GetHeight(self) return self.h end
+function frameMethods.SetScale(self, v) self.scale = v end
+function frameMethods.SetAlpha(self, v) self.alpha = v end
+function frameMethods.GetCenter() return 500, 400 end
+function frameMethods.GetEffectiveScale() return 1 end
+function frameMethods.SetFont(self, path, size, flags) self.font = { path, size, flags }; return true end
+function frameMethods.GetFont(self) if self.font then return unpack(self.font) end end
+function frameMethods.SetMinMaxValues(self, a, b) self.minV, self.maxV = a, b end
+function frameMethods.GetValue(self) return self.value or 0 end
+function frameMethods.SetValue(self, v)
+    v = math.max(self.minV or v, math.min(self.maxV or v, v))
+    self.value = v
+    if self.scripts.OnValueChanged then self.scripts.OnValueChanged(self, v) end
+end
+function frameMethods.SetTexture(self, t) self.texture = t end
+function frameMethods.SetColorTexture(self, r, g, b, a) self.color = { r, g, b, a } end
+function frameMethods.SetTextColor(self, r, g, b, a) self.textColor = { r, g, b, a } end
+function frameMethods.SetBackdrop(self, b) self.backdrop = b end
 function frameMethods.CreateFontString(self) return T.makeFrame("FontString") end
 function frameMethods.CreateTexture(self) return T.makeFrame("Texture") end
 
-function T.makeFrame(kind, name)
-    local o = newObject(kind)
+function T.makeFrame(otype, name)
+    local o = newObject(otype)
     for k, fn in pairs(frameMethods) do o[k] = fn end
-    if kind == "Frame" then o.shown = true end
     table.insert(T.frames, o)
     if name then _G[name] = o end
     return o
 end
-function CreateFrame(kind, name) local f = T.makeFrame(kind or "Frame", name); return f end
+function CreateFrame(otype, name) return T.makeFrame(otype or "Frame", name) end
+
+function T.click(frame, button)
+    assert(frame.scripts.OnClick, "frame has no OnClick")
+    frame.scripts.OnClick(frame, button or "LeftButton")
+end
 
 UIParent = T.makeFrame("Frame")
 DEFAULT_CHAT_FRAME = { AddMessage = function(_, msg) table.insert(T.chat, msg) end }
@@ -103,6 +136,30 @@ function PlaySound() T.sounds = T.sounds + 1 end
 function FlashClientIcon() end
 function InCombatLockdown() return T.combat end
 SlashCmdList = {}
+UISpecialFrames = {}
+ChatFontNormal = {}
+Minimap = T.makeFrame("Frame", "Minimap")
+Minimap.w = 140
+function GetCursorPosition() return 600, 500 end
+T.soundFiles = {}
+function PlaySoundFile(f) table.insert(T.soundFiles, f) end
+
+GameTooltip = T.makeFrame("Frame", "GameTooltip")
+GameTooltip.lines = {}
+function GameTooltip:SetOwner() self.lines = {} end
+function GameTooltip:AddLine(t) table.insert(self.lines, t) end
+function GameTooltip:AddDoubleLine(a, b) table.insert(self.lines, a .. " | " .. b) end
+function T.tooltipText() return table.concat(GameTooltip.lines, "\n") end
+
+ColorPickerFrame = T.makeFrame("Frame", "ColorPickerFrame")
+function ColorPickerFrame:SetupColorPickerAndShow(info) self.info = info end
+function ColorPickerFrame:GetColorRGB() return 0.1, 0.2, 0.3 end
+function ColorPickerFrame:GetColorAlpha() return 0.4 end
+
+Settings = {
+    RegisterCanvasLayoutCategory = function(panel, name) T.settingsPanel = panel; return { name = name } end,
+    RegisterAddOnCategory = function(cat) T.settingsCategory = cat end,
+}
 
 -- World / units ----------------------------------------------------------------
 function GetInstanceInfo()

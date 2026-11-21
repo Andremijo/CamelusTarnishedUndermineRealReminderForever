@@ -86,18 +86,44 @@ local function formatDuration(sec)
     return string.format("%dm", m)
 end
 
+ns.try, ns.plain, ns.say, ns.serverNow, ns.isSecret = try, plain, say, serverNow, isSecret
+ns.formatDuration = formatDuration
+
 ------------------------------------------------------------------------------
 -- Saved data
 ------------------------------------------------------------------------------
 
 local DEFAULTS = {
-    sound = true,
-    raidWarning = true,
-    nagSeconds = 20,     -- repeat the sound while a Real is waiting (0 = off)
+    -- Alerts
+    sound = true,             -- play a sound on a kill
+    soundKey = "raid_warning", -- see ns.SOUNDS
+    soundCustom = "",         -- sound file path or FileDataID when soundKey == "custom"
+    soundChannel = "Master",
+    raidWarning = true,       -- big text in the middle of the screen
+    chatAlerts = true,        -- a chat line on each kill
+    flashTaskbar = true,
+    nagSeconds = 20,          -- repeat the sound while a Real is waiting (0 = off)
     locked = true,
-    fallback = true,     -- detect kills by seeing a known boss dead
+    fallback = true,          -- detect kills by seeing a known boss dead
     debug = false,
-    point = nil,         -- banner position
+    point = nil,              -- banner position { point, relativePoint, x, y }
+    display = {
+        width = 480, height = 86, scale = 1, alpha = 1, strata = "HIGH",
+        bgColor = { 0, 0, 0, 0.75 },
+        border = "gold",          -- none / solid / gold / tooltip / dialog
+        borderColor = { 1, 1, 1, 1 },
+        borderSize = 20,
+        showIcon = true, iconSize = 52, iconSide = "LEFT",
+        titleText = "Loot your Tarnished Undermine Real!",
+        font = "friz", outline = "", justify = "LEFT",
+        titleSize = 17, titleColor = { 1, 0.82, 0, 1 },
+        subSize = 13, subColor = { 1, 1, 1, 1 },
+        showHint = true, showClose = true,
+        animation = "pulse",      -- none / pulse / flash / bounce / shake / grow / glow
+        animSpeed = 1,
+        intro = "zoom",           -- none / fade / zoom / slide
+    },
+    minimap = { hide = false, angle = 215 },
     realItemID = nil,    -- learned from loot / bags
     realIcon = nil,
     learnedInstances = {},  -- lower-cased instance name or "id:<n>" -> true
@@ -115,9 +141,13 @@ local function applyDefaults(t, defaults)
             else
                 t[k] = v
             end
+        elseif type(v) == "table" and type(t[k]) == "table" then
+            applyDefaults(t[k], v)
         end
     end
 end
+
+ns.DEFAULTS, ns.applyDefaults = DEFAULTS, applyDefaults
 
 local function initDB()
     TarnishedRealReminderDB = TarnishedRealReminderDB or {}
@@ -167,6 +197,8 @@ local function currentInstance()
     local name, instanceType, _, _, _, _, _, instanceID = try(GetInstanceInfo)
     return plain(name), plain(instanceType), plain(instanceID)
 end
+
+ns.currentInstance = currentInstance
 
 local function isEligibleInstance()
     local name, instanceType, id = currentInstance()
@@ -238,113 +270,64 @@ end
 ns.countReals = countReals
 
 ------------------------------------------------------------------------------
--- Reminder banner
+-- Reminder output (the banner itself lives in Banner.lua)
 ------------------------------------------------------------------------------
-
-local banner
 
 local function pendingNames()
     local names = {}
     for _, p in ipairs(CDB.pending) do names[#names + 1] = p.name end
     return table.concat(names, ", ")
 end
-
-local function savePoint()
-    local point, _, relPoint, x, y = banner:GetPoint(1)
-    DB.point = { point, relPoint, x, y }
-end
-
-local function createBanner()
-    if banner then return banner end
-    local ok, f = pcall(CreateFrame, "Frame", "TarnishedRealReminderBanner", UIParent, "BackdropTemplate")
-    if not ok then f = CreateFrame("Frame", "TarnishedRealReminderBanner", UIParent) end
-    banner = f
-    f:SetSize(480, 86)
-    f:SetFrameStrata("HIGH")
-    f:SetClampedToScreen(true)
-    if DB.point then
-        f:SetPoint(DB.point[1], UIParent, DB.point[2], DB.point[3], DB.point[4])
-    else
-        f:SetPoint("TOP", UIParent, "TOP", 0, -150)
-    end
-    if f.SetBackdrop then
-        f:SetBackdrop({
-            bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
-            edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Gold-Border",
-            tile = true, tileSize = 32, edgeSize = 24,
-            insets = { left = 6, right = 6, top = 6, bottom = 6 },
-        })
-    end
-
-    f.icon = f:CreateTexture(nil, "ARTWORK")
-    f.icon:SetSize(52, 52)
-    f.icon:SetPoint("LEFT", 16, 0)
-
-    f.title = f:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    f.title:SetPoint("TOPLEFT", f.icon, "TOPRIGHT", 12, -2)
-    f.title:SetPoint("RIGHT", -34, 0)
-    f.title:SetJustifyH("LEFT")
-    f.title:SetText("Loot your " .. ns.REAL_DISPLAY_NAME .. "!")
-
-    f.sub = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    f.sub:SetPoint("TOPLEFT", f.title, "BOTTOMLEFT", 0, -6)
-    f.sub:SetPoint("RIGHT", -34, 0)
-    f.sub:SetJustifyH("LEFT")
-    f.sub:SetWordWrap(true)
-
-    f.hint = f:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-    f.hint:SetPoint("BOTTOMLEFT", f.icon, "BOTTOMRIGHT", 12, -4)
-    f.hint:SetText("Nothing on the corpse? Close this with X.")
-
-    local close = CreateFrame("Button", nil, f, "UIPanelCloseButton")
-    close:SetPoint("TOPRIGHT", -4, -4)
-    close:SetScript("OnClick", function() ns.dismissAll() end)
-
-    f:SetMovable(true)
-    f:EnableMouse(true)
-    f:RegisterForDrag("LeftButton")
-    f:SetScript("OnDragStart", function(self) if not DB.locked then self:StartMoving() end end)
-    f:SetScript("OnDragStop", function(self) self:StopMovingOrSizing(); savePoint() end)
-
-    -- Pulse so it catches the eye.
-    f.elapsed = 0
-    f:SetScript("OnUpdate", function(self, dt)
-        self.elapsed = self.elapsed + dt
-        local a = 0.55 + 0.45 * math.abs(math.sin(self.elapsed * 3))
-        self.title:SetAlpha(a)
-        self.icon:SetAlpha(a)
-    end)
-    f:Hide()
-    return f
-end
+ns.pendingNames = pendingNames
 
 local function updateBanner()
-    local f = createBanner()
-    local show = #CDB.pending > 0 and (isEligibleInstance() or ns.testMode or not DB.locked)
-    if #CDB.pending == 0 and not DB.locked then
-        f.sub:SetText("Unlocked: drag me, then type /trr lock")
-        f:Show()
-        return
-    end
-    if not show then f:Hide(); return end
-    f.icon:SetTexture(DB.realIcon or ns.REAL_FALLBACK_ICON)
-    local n = #CDB.pending
-    f.sub:SetText((n == 1 and "Waiting on: " or (n .. " bosses waiting: ")) .. pendingNames())
-    f:Show()
+    if ns.Banner then ns.Banner.Update() end
 end
 ns.updateBanner = updateBanner
 
-local function alert(text)
-    if DB.sound then
-        try(PlaySound, (SOUNDKIT and SOUNDKIT.RAID_WARNING) or 8959, "Master")
+-- Sound choices. SOUNDKIT names are looked up at runtime; the number is the
+-- fallback if a client renames the constant.
+ns.SOUNDS = {
+    { key = "raid_warning", label = "Raid warning",   kit = "RAID_WARNING",            id = 8959 },
+    { key = "ready_check",  label = "Ready check",    kit = "READY_CHECK",             id = 8960 },
+    { key = "alarm",        label = "Alarm clock",    kit = "ALARM_CLOCK_WARNING_3",   id = 12889 },
+    { key = "quest",        label = "Quest complete", kit = "IG_QUEST_LIST_COMPLETE",  id = 878 },
+    { key = "coins",        label = "Coins",          kit = "LOOT_WINDOW_COIN_SOUND",  id = 120 },
+    { key = "map_ping",     label = "Map ping",       kit = "MAP_PING",                id = 3175 },
+    { key = "whisper",      label = "Whisper",        kit = "TELL_MESSAGE",            id = 3081 },
+    { key = "auction",      label = "Auction house",  kit = "AUCTION_WINDOW_OPEN",     id = 5274 },
+    { key = "custom",       label = "Custom file / ID" },
+}
+ns.SOUND_CHANNELS = { "Master", "SFX", "Dialog", "Ambience", "Music" }
+
+function ns.PlayAlertSound(force)
+    if not DB.sound and not force then return end
+    local channel = DB.soundChannel or "Master"
+    if DB.soundKey == "custom" then
+        local custom = DB.soundCustom or ""
+        if custom == "" then return end
+        try(PlaySoundFile, tonumber(custom) or custom, channel)
+        return
     end
+    for _, s in ipairs(ns.SOUNDS) do
+        if s.key == DB.soundKey then
+            try(PlaySound, (SOUNDKIT and s.kit and SOUNDKIT[s.kit]) or s.id, channel)
+            return
+        end
+    end
+end
+
+local function alert(text, intro)
+    ns.PlayAlertSound()
     if DB.raidWarning and RaidNotice_AddMessage and RaidWarningFrame then
         try(RaidNotice_AddMessage, RaidWarningFrame, text,
             (ChatTypeInfo and ChatTypeInfo["RAID_WARNING"]) or { r = 1, g = 0.8, b = 0 })
     end
-    try(FlashClientIcon)
+    if DB.flashTaskbar then try(FlashClientIcon) end
+    if intro and ns.Banner then ns.Banner.PlayIntro() end
     state.lastNag = GetTime()
 end
+ns.alert = alert
 
 ------------------------------------------------------------------------------
 -- Kills and pending Reals
@@ -396,8 +379,9 @@ local function registerKill(name, level, source, guids, force)
                                 instance = instName, guids = guids or {},
                                 test = (source == "test") or nil })
     debug(string.format("Kill registered via %s: %s (level %s)", source, name, tostring(level)))
-    alert("Loot the " .. ns.REAL_DISPLAY_NAME .. " from " .. name .. "!")
     updateBanner()
+    if DB.chatAlerts then say("|cffff4040Loot the Real from|r |cffffffff" .. name .. "|r") end
+    alert("Loot the " .. ns.REAL_DISPLAY_NAME .. " from " .. name .. "!", true)
 end
 ns.registerKill = registerKill
 
@@ -405,7 +389,8 @@ local function resolvePending(index, how, count)
     local p = table.remove(CDB.pending, index)
     if not p then return end
     if p.test then updateBanner(); return end
-    CDB.looted[p.key] ={ name = p.name, t = serverNow(), n = count, none = (how == "none") or nil }
+    CDB.looted[p.key] = { name = p.name, t = serverNow(), n = count, none = (how == "none") or nil,
+                          instance = p.instance }
     if how == "looted" then
         say(string.format("Got %s from |cffffffff%s|r. %d carried.",
             (count and count > 1) and (count .. " Reals") or "your Real", p.name, state.realCount or 0))
@@ -433,7 +418,8 @@ local function onRealsGained(delta)
         -- you are targeting, if any, so it is not asked for again today.
         local name = plain(try(UnitName, "target"))
         if name and plain(try(UnitIsDead, "target")) then
-            CDB.looted[name:lower()] = { name = name, t = serverNow(), n = delta }
+            CDB.looted[name:lower()] = { name = name, t = serverNow(), n = delta,
+                                         instance = (currentInstance()) }
         end
         say(string.format("+%d Real%s. %d carried.", delta, delta > 1 and "s" or "", state.realCount or 0))
     end
@@ -613,7 +599,7 @@ local function onLootClosed()
         recount()
         if (state.realCount or 0) <= (info.countBefore or 0) then
             say("|cffff4040You closed the loot window and left the Real on the corpse!|r")
-            alert("You left the " .. ns.REAL_DISPLAY_NAME .. " on the corpse!")
+            alert("You left the " .. ns.REAL_DISPLAY_NAME .. " on the corpse!", true)
         end
     end)
 end
@@ -678,12 +664,14 @@ end
 
 local HELP = {
     "/trr - status: Reals carried, bosses looted today, time to reset",
+    "/trr options - open the settings window (also: minimap button)",
     "/trr test - show a test reminder",
     "/trr clear - forget the bosses still waiting to be looted",
     "/trr reset - forget everything looted today on this character",
     "/trr add - count the dungeon you are in as a Real dungeon",
     "/trr unlock | lock - move the reminder banner",
     "/trr sound | warning - toggle the sound / raid warning text",
+    "/trr minimap - show or hide the minimap button",
     "/trr nag <seconds> - repeat the sound while a Real waits (0 = off)",
     "/trr debug - toggle debug messages",
 }
@@ -692,6 +680,12 @@ local function slash(msg)
     local cmd, arg = (msg or ""):lower():match("^%s*(%S*)%s*(.-)%s*$")
     if cmd == "" or cmd == "status" then
         printStatus()
+    elseif cmd == "options" or cmd == "config" or cmd == "settings" then
+        if ns.Options then ns.Options.Toggle() end
+    elseif cmd == "minimap" then
+        DB.minimap.hide = not DB.minimap.hide
+        if ns.Minimap then ns.Minimap.Refresh() end
+        say("Minimap button " .. (DB.minimap.hide and "hidden" or "shown") .. ".")
     elseif cmd == "test" then
         ns.testMode = true
         registerKill("Test Boss", 60, "test", nil, true)
@@ -747,6 +741,8 @@ handlers.ADDON_LOADED = function(name)
     if name ~= ADDON then return end
     initDB()
     checkDailyReset()
+    if ns.Minimap then pcall(ns.Minimap.Init) end
+    if ns.Options then pcall(ns.Options.RegisterWithSettings) end
 end
 
 handlers.PLAYER_ENTERING_WORLD = function()

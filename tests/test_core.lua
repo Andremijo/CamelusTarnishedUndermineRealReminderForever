@@ -7,9 +7,13 @@ local ns
 local function load()
     -- Fresh client: wipe mock state that persists between "sessions".
     ns = {}
-    for _, file in ipairs({ "Data.lua", "Core.lua" }) do
-        local chunk = assert(loadfile(ADDON_DIR .. file))
-        chunk("TarnishedRealReminder", ns)
+    -- Load the files in the order the .toc lists them.
+    for line in io.lines(ADDON_DIR .. "TarnishedRealReminder.toc") do
+        local file = line:match("^([%w_]+%.lua)%s*$")
+        if file then
+            local chunk = assert(loadfile(ADDON_DIR .. file))
+            chunk("TarnishedRealReminder", ns)
+        end
     end
     T.fire("ADDON_LOADED", "TarnishedRealReminder")
     T.fire("PLAYER_ENTERING_WORLD")

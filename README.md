@@ -1,7 +1,9 @@
-# Tarnished Real Reminder (WoW: Forever)
+# Camelus' Tarnished Undermine Real Reminder (WoW: Forever)
 
 An addon that reminds you to loot your **Tarnished Undermine Real** from every boss that drops one,
 once per boss per day.
+
+**Download:** the latest zip is in [`releases/`](releases/). Each zip has the version in its name. To build one, bump `## Version` in the `.toc` and run `tools/build_zip.sh`.
 
 When an eligible boss dies, you get a pulsing banner, a raid-warning sound and the boss's name.
 The reminder stays up until the Real is in your bags. It repeats every 20 seconds when you're out of combat.
@@ -30,20 +32,48 @@ You can also add the dungeon you're in with `/trr add`.
 
 1. In the Battle.net app, select WoW: Forever, click the gear next to Play, and choose **Show in Explorer** (Finder on Mac).
 2. Open `Interface\AddOns` inside that folder. Create it if it doesn't exist.
-3. Copy the `TarnishedRealReminder` folder from this repository into it.
+3. Unzip the latest zip from `releases/` there. You should end up with `Interface\AddOns\TarnishedRealReminder\`.
 4. Restart the game or type `/reload`, then type `/trr test` to check that it works.
+
+## Minimap button
+
+Hover over the coin on the minimap to see:
+
+- how many Reals you carry and how long until the daily reset;
+- every boss you've looted today, grouped by dungeon, with how many Reals each gave;
+- bosses still waiting to be looted (the button also shows a red dot while a Real is waiting);
+- bosses you've met before in the current dungeon that you haven't looted today.
+
+Left-click opens the settings, right-click shows a test reminder, and dragging moves the button around the minimap.
+The same menu is in the addon list under the minimap (the Addon Compartment).
+`/trr minimap` hides or shows the button.
+
+## Customising the reminder
+
+Open the settings with `/trr options`, a left-click on the minimap button, or **Options > AddOns > Camelus' Real Reminder**.
+Changes apply right away, and the banner stays on screen as a preview while the window is open.
+
+| Section | Settings |
+|---|---|
+| Banner | Width, height, scale, opacity, horizontal and vertical position (or untick Lock and drag it), frame layer, background colour, border style (none, solid line, gold dialog, silver dialog, tooltip), border colour and size |
+| Text and icon | Title text, font, outline, alignment, title size and colour, boss-name size and colour, icon on or off, icon side and size, the hint line, the close button |
+| Animation and sound | Animation (pulse, flash, bounce, shake, grow and shrink, glowing border, or none) and its speed; entrance effect (fade, zoom, slide, or none); sound on or off; built-in sound choice or your own file path or FileDataID; sound channel; repeat interval; raid-warning text; chat message; taskbar flash; minimap button |
+
+**Reset look to defaults** puts the banner back the way it started without touching your other settings.
 
 ## Commands
 
 | Command | What it does |
 |---|---|
 | `/trr` (or `/reals`) | Reals carried, bosses looted today, time until the daily reset, and the bosses seen in this dungeon |
+| `/trr options` | Opens the settings window |
 | `/trr test` | Shows a test reminder |
 | `/trr clear` | Dismisses the waiting reminders (the X on the banner does the same) |
 | `/trr reset` | Forgets what you looted today on this character |
 | `/trr add` | Counts the dungeon you're in as a Real dungeon |
 | `/trr unlock` / `/trr lock` | Move the banner |
 | `/trr sound`, `/trr warning` | Turns the sound or the raid-warning text on or off |
+| `/trr minimap` | Hides or shows the minimap button |
 | `/trr nag <seconds>` | Sets how often the sound repeats while a Real is waiting (0 turns it off) |
 | `/trr debug` | Prints why each kill did or didn't create a reminder |
 
@@ -81,5 +111,6 @@ pip install lupa
 python3 tests/run_tests.py
 ```
 
-These run the addon under Lua 5.1 against a mocked client and step through dungeon runs: kills, loot, the daily reset,
-secret values, a client without encounter events, and the Real stored as a currency.
+These run the addon under Lua 5.1 against a mocked client. They step through dungeon runs (kills, loot, the daily reset,
+secret values, a client without encounter events, the Real stored as a currency), then drive the minimap tooltip and every
+control in the settings window, and check that each animation, entrance, border, font and sound reaches the banner.
