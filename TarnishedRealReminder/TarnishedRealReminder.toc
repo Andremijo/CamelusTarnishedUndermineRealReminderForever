@@ -1,0 +1,11 @@
+## Interface: 16001
+## Title: Tarnished Real Reminder
+## Notes: Reminds you to loot the Tarnished Undermine Real from every boss that drops one today (WoW: Forever).
+## Author: Camelus
+## Version: 1.0.0
+## IconTexture: Interface\Icons\INV_Misc_Coin_17
+## SavedVariables: TarnishedRealReminderDB
+## SavedVariablesPerCharacter: TarnishedRealReminderCharDB
+
+Data.lua
+Core.lua
