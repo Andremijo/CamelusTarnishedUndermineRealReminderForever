@@ -77,10 +77,20 @@ check(#CDB.pending == 0, "Incendius (53), no boss frame at all: no reminder")
 kill("Magmus", SECRET)
 check(#CDB.pending == 1, "Magmus (57), level hidden: reminder")
 ns.dismissAll()
-local r = row("Blackrock Depths", "High Interrogator Gerstahn")
-check(r.status == "low" and ns.Roster.STATUS.low.text(r) == "level 52, no Real", "checklist: level 52, no Real")
+local r = row("Blackrock Depths", "Houndmaster Grebmar")
+check(r.status == "low" and ns.Roster.STATUS.low.text(r) == "level 52, no Real", "checklist: Grebmar level 52, no Real")
+r = row("Blackrock Depths", "High Interrogator Gerstahn")
+check(r.status == "low" and ns.Roster.STATUS.low.text(r) == "drops no Real", "checklist: Gerstahn drops no Real")
 r = row("Blackrock Depths", "Phalanx")
 check(r.level == 55 and r.status == "todo", "Phalanx (55) counts")
+
+-- High Interrogator Gerstahn and Lord Roccor: confirmed in game, no Real,
+-- whatever level is read (even a wrong 58).
+kill("High Interrogator Gerstahn", 58)
+kill("Lord Roccor", 58)
+check(#CDB.pending == 0, "Gerstahn and Roccor never remind (confirmed no Real)")
+r = row("Blackrock Depths", "Lord Roccor")
+check(r.status == "low" and ns.Roster.STATUS.low.text(r) == "drops no Real", "checklist: Roccor drops no Real")
 
 -- Fineous Darkvire is level 54 but confirmed in game to drop a Real: he
 -- always reminds, whatever his level.

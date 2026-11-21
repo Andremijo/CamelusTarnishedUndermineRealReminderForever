@@ -87,8 +87,8 @@ ns.ROSTER = {
     {
         name = "Blackrock Depths", ids = { 230 },
         bosses = {
-            { "High Interrogator Gerstahn" },
-            { "Lord Roccor" },
+            { "High Interrogator Gerstahn", noReal = true }, -- confirmed in game: no Real
+            { "Lord Roccor", noReal = true },                -- confirmed in game: no Real
             { "Houndmaster Grebmar" },
             { "Ring of the Law", variable = true, aliases = { "Ring of Law", "Gorosh the Dervish", "Grizzle", "Eviscerator",
                                              "Ok'thor the Breaker", "Anub'shiah", "Hedrum the Creeper" } },

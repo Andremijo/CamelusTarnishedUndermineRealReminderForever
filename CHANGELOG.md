@@ -10,6 +10,7 @@ Each `## vX.Y.Z` section below becomes the notes of that version's GitHub Releas
 - **Level 55 is only a guide, so what happens in game now wins.**
   - **Warder Stilgiss & Verek no longer remind you.** Stilgiss is level 56 but drops no Real. The checklist shows "drops no Real".
   - **Fineous Darkvire reminds you again.** He's level 54 but does drop a Real. Version 1.2.1 had stopped reminding about him.
+  - **High Interrogator Gerstahn and Lord Roccor** are confirmed in game to drop no Real, and never remind you.
 - **The addon learns both ways from loot:**
   - **A boss gives you a Real the addon didn't expect** (a boss below 55): it's recorded as looted for today, so you aren't reminded about it again today, and the addon reminds you about that boss from then on.
   - **A boss's own corpse has no Real for you** on a day you hadn't looted it: the addon stops reminding about it, whatever its level.
