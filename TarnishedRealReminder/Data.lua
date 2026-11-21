@@ -222,6 +222,9 @@ ns.ROSTER = {
             { "Balnazzar", aliases = { "Grand Crusader Dathrohan" } },
             { "Skul", optional = true },
             { "Hearthsinger Forresten", optional = true, noReal = true }, -- confirmed in game: no Real
+            -- Summoned (blacksmithing plans); not in Wowhead's journal, but the
+            -- game reports him as a boss. Confirmed in game: no Real.
+            { "Crimson Hammersmith", optional = true, noReal = true },
         },
     },
     {

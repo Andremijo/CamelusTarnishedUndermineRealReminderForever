@@ -107,12 +107,12 @@ loot(kill("Commander Malor", 60))
 local strat = group("Stratholme Live")
 local malor = rowOf(strat, "Malor the Zealous")
 check(malor.status == "looted" and malor.display == "Commander Malor", "alias ticks the row and the game's name is shown")
-check(#strat.rows == 10, "alias didn't add a row")
+check(#strat.rows == 11, "alias didn't add a row")
 
 -- A boss the list doesn't know is added to its dungeon.
 loot(kill("Balzaphon", 60))
 strat = group("Stratholme Live")
-check(#strat.rows == 11 and rowOf(strat, "Balzaphon").status == "looted", "unlisted boss added and ticked")
+check(#strat.rows == 12 and rowOf(strat, "Balzaphon").status == "looted", "unlisted boss added and ticked")
 
 -- Killed but not looted: "waiting" inside, "missed" after leaving.
 kill("Baron Rivendare", 62)

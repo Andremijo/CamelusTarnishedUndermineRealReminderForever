@@ -112,6 +112,11 @@ kill("Hearthsinger Forresten", SECRET)
 check(#CDB.pending == 0, "Hearthsinger Forresten never reminds (confirmed no Real)")
 r = row("Stratholme Live", "Hearthsinger Forresten")
 check(r and r.status == "low" and ns.Roster.STATUS.low.text(r) == "drops no Real", "checklist: Forresten drops no Real")
+kill("Crimson Hammersmith", 60)
+kill("Crimson Hammersmith", SECRET)
+check(#CDB.pending == 0, "Crimson Hammersmith never reminds (confirmed no Real)")
+r = row("Stratholme Live", "Crimson Hammersmith")
+check(r and r.status == "low" and ns.Roster.STATUS.low.text(r) == "drops no Real", "checklist: Crimson Hammersmith drops no Real")
 enter("Blackrock Depths", 230)
 
 -- High Interrogator Gerstahn and Lord Roccor: confirmed in game, no Real,

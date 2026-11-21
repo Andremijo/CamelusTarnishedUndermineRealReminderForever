@@ -2,6 +2,13 @@
 
 Each `## vX.Y.Z` section below becomes the notes of that version's GitHub Release, published automatically when the version reaches `main`.
 
+## v1.2.7
+
+**Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.
+
+### Fixed
+- **Crimson Hammersmith no longer reminds you.** He's summoned in Stratholme with blacksmithing plans. He isn't in Wowhead's Forever dungeon journal, but the game reports him as a boss, and he's confirmed in game to drop no Real. He's now in the Stratholme Live list as optional, and the checklist shows "drops no Real".
+
 ## v1.2.6
 
 **Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.
