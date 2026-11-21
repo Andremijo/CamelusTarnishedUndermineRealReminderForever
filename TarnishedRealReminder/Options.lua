@@ -319,7 +319,8 @@ local function buildBossPage(parent)
     page.summary = label(page, "", "GameFontHighlight")
     page.summary:SetPoint("TOPLEFT", 14, -58)
     page.legend = label(page, "Hover over a boss for details. Right-click a boss to ignore it, if it doesn't exist "
-        .. "in this version of the game or never drops a Real.", "GameFontDisableSmall")
+        .. "in this version of the game or never drops a Real. Optional bosses (rares, summoned and quest bosses) only "
+        .. "count once they give you a Real.", "GameFontDisableSmall")
     page.legend:SetPoint("TOPLEFT", page.summary, "BOTTOMLEFT", 0, -4)
 
     local sf = CreateFrame("ScrollFrame", nil, page)
@@ -459,7 +460,7 @@ local function buildBossPage(parent)
                 r:SetSize(COL_W, ROW_H)
                 local st = ns.Roster.STATUS[d.status]
                 r.name:SetText(d.display)
-                local dim = (d.status == "low" or d.status == "ignored")
+                local dim = (d.status == "low" or d.status == "ignored" or d.status == "optional")
                 if dim then
                     r.name:SetTextColor(st.color[1], st.color[2], st.color[3])
                 elseif d.status == "looted" or d.status == "none" or d.status == "waiting" or d.status == "missed" then

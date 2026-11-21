@@ -64,7 +64,7 @@ function ns.FillTooltip(tt)
 
     local mode = DB.tooltipShows or "looted"
     local groups = ns.Roster.Build()
-    local hereGroup = ns.Roster.GroupNameFor(ns.currentInstance())
+    local hereGroups = ns.Roster.GroupNamesFor(ns.currentInstance())
     tt:AddLine(" ")
 
     if mode == "looted" then
@@ -102,7 +102,7 @@ function ns.FillTooltip(tt)
         local folded = false
         for _, g in ipairs(groups) do
             addGroupHeader(tt, g)
-            local started = g.done > 0 or g.missed > 0 or g.name == hereGroup
+            local started = g.done > 0 or g.missed > 0 or hereGroups[g.name]
             local complete = g.total > 0 and g.done >= g.total
             if started and not (mode == "unlooted" and complete) then
                 for _, r in ipairs(g.rows) do

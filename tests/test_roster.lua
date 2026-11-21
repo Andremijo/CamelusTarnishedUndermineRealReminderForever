@@ -75,13 +75,17 @@ check(not R.Match("Lord Alexei Barov", "Lady Illucia Barov"), "Barovs kept apart
 local groups = R.Build()
 local names = {}
 for _, g in ipairs(groups) do names[#names + 1] = g.name end
-check(table.concat(names, ",") == "Blackrock Depths,Blackrock Spire,Dire Maul,Scholomance,Stratholme,Shaper's Terrace,Blackmaw Hold",
-    "all seven dungeons listed in order: " .. table.concat(names, ","))
+check(table.concat(names, ",") == "Blackrock Depths,Lower Blackrock Spire,Upper Blackrock Spire,Dire Maul East,"
+    .. "Dire Maul West,Dire Maul North,Scholomance,Stratholme Live,Stratholme Undead,The Shaper's Terrace,Blackmaw Hold",
+    "every dungeon part listed in Wowhead's order: " .. table.concat(names, ","))
 local scholo = group("Scholomance")
-check(#scholo.rows == 13 and scholo.total == 13 and scholo.done == 0, "Scholomance: 13 bosses, none done")
+check(#scholo.rows == 15 and scholo.total == 13 and scholo.done == 0, "Scholomance: 15 journal bosses, 13 counted, none done")
+check(rowOf(scholo, "Kormok").status == "optional", "summoned boss shown as optional")
 local brd = group("Blackrock Depths")
+check(#brd.rows == 18, "BRD: Wowhead's 18 journal entries")
 check(rowOf(brd, "Lord Roccor").status == "low", "Lord Roccor (51) shown as below 55")
-check(brd.total == 19 - 7, "BRD counts only level 55+ bosses (" .. brd.total .. ")")
+check(brd.total == 9, "BRD counts only level 55+ non-optional bosses (" .. brd.total .. ")")
+check(rowOf(brd, "Ribbly Screwspigot") == nil, "Ribbly isn't a Forever journal boss")
 
 -- The run from the screenshot: all 13 Scholomance bosses, with the game's names.
 enter("Scholomance", 289)
@@ -90,29 +94,33 @@ local scholoKills = { "Kirtonos", "Jandice Barov", "Rattlegore", "Marduk Blackpo
     "Lady Illucia Barov", "Darkmaster Gandling" }
 for _, boss in ipairs(scholoKills) do loot(kill(boss, 60)) end
 scholo = group("Scholomance")
-check(#scholo.rows == 13, "no duplicate rows after a full clear (" .. #scholo.rows .. ")")
+check(#scholo.rows == 15, "no duplicate rows after a full clear (" .. #scholo.rows .. ")")
 check(scholo.done == 13 and scholo.total == 13 and scholo.reals == 13, "Scholomance 13/13, 13 Reals")
 check(rowOf(scholo, "Kirtonos").status == "looted", "Kirtonos ticked")
+check(rowOf(scholo, "Kirtonos").display == "Kirtonos", "row shows the game's name, not the journal's")
+check(rowOf(scholo, "Ras Frostwhisper").status == "looted", "journal's Ras Frostwhisper ticked by the game's Ras Frostwhisperer")
 
 -- Stratholme: the game reports a name that only matches an alias.
 enter("Stratholme", 329)
 loot(kill("Commander Malor", 60))
-local strat = group("Stratholme")
+local strat = group("Stratholme Live")
 local malor = rowOf(strat, "Malor the Zealous")
 check(malor.status == "looted" and malor.display == "Commander Malor", "alias ticks the row and the game's name is shown")
-check(#strat.rows == 13, "alias didn't add a row")
+check(#strat.rows == 10, "alias didn't add a row")
 
 -- A boss the list doesn't know is added to its dungeon.
-loot(kill("Postmaster Malown", 60))
-strat = group("Stratholme")
-check(#strat.rows == 14 and rowOf(strat, "Postmaster Malown").status == "looted", "unlisted boss added and ticked")
+loot(kill("Balzaphon", 60))
+strat = group("Stratholme Live")
+check(#strat.rows == 11 and rowOf(strat, "Balzaphon").status == "looted", "unlisted boss added and ticked")
 
 -- Killed but not looted: "waiting" inside, "missed" after leaving.
 kill("Baron Rivendare", 62)
-strat = group("Stratholme")
-check(rowOf(strat, "Baron Rivendare").status == "waiting" and strat.missed == 1, "inside: waiting to be looted")
+strat = group("Stratholme Undead")
+check(rowOf(strat, "Baron Rivendare").status == "waiting" and strat.missed == 1,
+    "same instance, other side: the boss goes to Stratholme Undead, waiting to be looted")
+check(group("Stratholme Live").missed == 0, "...and not to Stratholme Live")
 enter("Stormwind City", 0); T.instance.type = "none"; T.fire("ZONE_CHANGED_NEW_AREA")
-strat = group("Stratholme")
+strat = group("Stratholme Undead")
 check(rowOf(strat, "Baron Rivendare").status == "missed" and strat.missed == 1, "after leaving: missed")
 
 -- A level read in game overrides the guide's "below 55".
@@ -120,7 +128,7 @@ enter("Blackrock Depths", 230)
 local roccor = kill("Lord Roccor", 56)
 brd = group("Blackrock Depths")
 check(rowOf(brd, "Lord Roccor").status == "waiting", "Roccor at level 56 counts")
-check(brd.total == 19 - 6, "BRD total now includes Roccor (" .. brd.total .. ")")
+check(brd.total == 10, "BRD total now includes Roccor (" .. brd.total .. ")")
 lootNothing(roccor)
 brd = group("Blackrock Depths")
 check(rowOf(brd, "Lord Roccor").status == "none" and brd.done == 1, "dismissed corpse counts as done, nothing for you")
@@ -129,7 +137,7 @@ check(rowOf(brd, "Lord Roccor").status == "none" and brd.done == 1, "dismissed c
 local seven = rowOf(brd, "The Seven")
 R.ToggleIgnore(seven)
 brd = group("Blackrock Depths")
-check(rowOf(brd, "The Seven").status == "ignored" and brd.total == 19 - 7, "ignored boss left out of the count")
+check(rowOf(brd, "The Seven").status == "ignored" and brd.total == 9, "ignored boss left out of the count")
 R.ToggleIgnore(rowOf(brd, "The Seven"))
 check(rowOf(group("Blackrock Depths"), "The Seven").status == "todo", "un-ignored")
 
@@ -156,7 +164,7 @@ local function headerFor(name)
 end
 check(headerFor("Scholomance") and headerFor("Scholomance").count:GetText() == "13/13", "Scholomance header 13/13")
 check(headerFor("Scholomance").count.textColor[2] == 1 and headerFor("Scholomance").count.textColor[1] < 0.5, "complete dungeon in green")
-check(headerFor("Stratholme").count.textColor[1] == 1 and headerFor("Stratholme").count.textColor[2] < 0.5, "dungeon with a missed Real in red")
+check(headerFor("Stratholme Undead").count.textColor[1] == 1 and headerFor("Stratholme Undead").count.textColor[2] < 0.5, "dungeon with a missed Real in red")
 
 local shownRows, missedRow = 0, nil
 for _, r in ipairs(page.rows) do
@@ -199,7 +207,7 @@ check(not win:IsShown(), "click again closes")
 -- Daily reset clears the ticks.
 T.server = T.resetAtServer + 10
 scholo = group("Scholomance")
-check(scholo.done == 0 and scholo.total == 13 and #scholo.rows == 13, "after reset: 0/13, names kept")
+check(scholo.done == 0 and scholo.total == 13 and #scholo.rows == 15, "after reset: 0/13, names kept")
 check(rowOf(scholo, "Ras Frostwhisper").display == "Ras Frostwhisperer", "game's names remembered after reset")
 
 print(string.format("%d passed, %d failed", passed, failed))

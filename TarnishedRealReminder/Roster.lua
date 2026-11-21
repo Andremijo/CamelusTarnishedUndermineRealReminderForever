@@ -17,6 +17,7 @@ Roster.STATUS = {
     waiting = { color = { 1, 0.35, 0.35 },  text = "killed - loot it!" },
     missed  = { color = { 1, 0.35, 0.35 },  text = "killed, not looted" },
     todo    = { color = { 1, 1, 1 },        text = "not looted" },
+    optional = { color = { 0.62, 0.62, 0.62 }, text = "optional" },
     low     = { color = { 0.42, 0.42, 0.42 }, text = "below 55, no Real" },
     ignored = { color = { 0.42, 0.42, 0.42 }, text = "ignored" },
 }
@@ -50,22 +51,71 @@ local function rowMatches(row, name)
     return false
 end
 
-local function defIndexFor(instanceName)
+-- Checklist groups for an instance name. Usually one; the halves of
+-- Blackrock Spire, the wings of Dire Maul and the sides of Stratholme may
+-- share an instance name, and are then told apart by boss name.
+local function defIndexesFor(instanceName)
     local l = instanceName and instanceName:lower()
-    if not l then return nil end
+    local out = {}
+    if not l then return out end
     for i, def in ipairs(ns.ROSTER) do
-        if def.name:lower() == l then return i end
+        local hit = def.name:lower() == l
         for _, n in ipairs(def.instanceNames or {}) do
-            if n == l then return i end
+            if n == l then hit = true end
+        end
+        if hit then out[#out + 1] = i end
+    end
+    return out
+end
+
+local function defHasBoss(def, name)
+    for _, b in ipairs(def.bosses) do
+        if Roster.Match(b[1], name) then return true end
+        for _, a in ipairs(b.aliases or {}) do
+            if Roster.Match(a, name) then return true end
         end
     end
+    return false
+end
+
+-- The group a boss belongs to: the one listing it, else the first group for
+-- the instance.
+local function defIndexFor(instanceName, bossName)
+    local list = defIndexesFor(instanceName)
+    if bossName and #list > 1 then
+        for _, i in ipairs(list) do
+            if defHasBoss(ns.ROSTER[i], bossName) then return i end
+        end
+    end
+    return list[1]
+end
+
+-- True if two instance names belong to the same dungeon.
+local function sameDungeon(a, b)
+    if not (a and b) then return false end
+    if a == b then return true end
+    for _, i in ipairs(defIndexesFor(a)) do
+        for _, j in ipairs(defIndexesFor(b)) do
+            if i == j then return true end
+        end
+    end
+    return false
 end
 
 -- Checklist group name for an instance name ("Lower Blackrock Spire" ->
 -- "Blackrock Spire"), or the instance name itself if it isn't in the list.
+-- With several groups for one instance (Dire Maul), returns all their names.
 function Roster.GroupNameFor(instanceName)
-    local i = defIndexFor(instanceName)
-    return i and ns.ROSTER[i].name or instanceName
+    local list = defIndexesFor(instanceName)
+    if #list == 0 then return instanceName end
+    return ns.ROSTER[list[1]].name
+end
+
+function Roster.GroupNamesFor(instanceName)
+    local names = {}
+    for _, i in ipairs(defIndexesFor(instanceName)) do names[ns.ROSTER[i].name] = true end
+    if not next(names) and instanceName then names[instanceName] = true end
+    return names
 end
 
 -- Key under which a row's "ignored" choice is saved.
@@ -86,13 +136,13 @@ function Roster.Build()
         for _, b in ipairs(def.bosses) do
             local names = { b[1] }
             for _, a in ipairs(b.aliases or {}) do names[#names + 1] = a end
-            g.rows[#g.rows + 1] = { display = b[1], names = names, low = b.low, static = true }
+            g.rows[#g.rows + 1] = { display = b[1], names = names, low = b.low, optional = b.optional, static = true }
         end
     end
 
-    local function groupFor(inst)
+    local function groupFor(inst, bossName)
         inst = inst or "Other"
-        local i = defIndexFor(inst)
+        local i = defIndexFor(inst, bossName)
         if i then return groups[i] end
         for _, g in ipairs(groups) do
             if g.name == inst then return g end
@@ -125,17 +175,16 @@ function Roster.Build()
     for inst in pairs(DB.knownBosses) do instances[#instances + 1] = inst end
     table.sort(instances)
     for _, inst in ipairs(instances) do
-        local g = groupFor(inst)
         local list = {}
         for boss in pairs(DB.knownBosses[inst]) do list[#list + 1] = boss end
         table.sort(list)
-        for _, boss in ipairs(list) do addName(g, boss) end
+        for _, boss in ipairs(list) do addName(groupFor(inst, boss), boss) end
     end
     for _, v in pairs(CDB.looted) do
-        addName(groupFor(v.instance), v.name).looted = v
+        addName(groupFor(v.instance, v.name), v.name).looted = v
     end
     for _, p in ipairs(CDB.pending) do
-        if not p.test then addName(groupFor(p.instance), p.name).pending = p end
+        if not p.test then addName(groupFor(p.instance, p.name), p.name).pending = p end
     end
 
     local here = ns.currentInstance()
@@ -152,17 +201,18 @@ function Roster.Build()
             if r.looted then
                 r.status = r.looted.none and "none" or "looted"
             elseif r.pending then
-                local inside = here and r.pending.instance and defIndexFor(here) == defIndexFor(r.pending.instance)
-                r.status = inside and "waiting" or "missed"
+                r.status = sameDungeon(here, r.pending.instance) and "waiting" or "missed"
             elseif r.ignored then
                 r.status = "ignored"
             elseif r.low then
                 r.status = "low"
+            elseif r.optional then
+                r.status = "optional"
             else
                 r.status = "todo"
             end
 
-            if r.status ~= "ignored" and r.status ~= "low" then g.total = g.total + 1 end
+            if r.status ~= "ignored" and r.status ~= "low" and r.status ~= "optional" then g.total = g.total + 1 end
             if r.status == "looted" or r.status == "none" then g.done = g.done + 1 end
             if r.status == "looted" then g.reals = g.reals + (r.looted.n or 1) end
             if r.status == "waiting" or r.status == "missed" then g.missed = g.missed + 1 end

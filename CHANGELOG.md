@@ -16,7 +16,14 @@ Each `## vX.Y.Z` section below becomes the notes of that version's GitHub Releas
   - **ignored**.
 
   Each dungeon shows a count such as `13/13` in green when done, or in red when a Real was missed. Hover over a boss for details. Right-click a boss to ignore it if it doesn't exist in this version of the game or never drops a Real.
-- **Game names.** The list starts from guide names and switches to the game's own names as you kill bosses, so "Kirtonos the Herald" becomes "Kirtonos". Bosses the list doesn't know are added automatically.
+- **Boss lists from Wowhead.** The lists follow Wowhead's WoW: Forever Dungeon Journal, split the way the journal splits them:
+  - Lower and Upper Blackrock Spire;
+  - Dire Maul East, West and North;
+  - Stratholme Live and Undead.
+
+  Shaper's Terrace and Blackmaw Hold come from Wowhead's Forever guides and statistics, since they have no journal page yet.
+- **Optional bosses.** Rares and summoned or quest bosses are marked *optional*. They're listed but only counted once they give you a Real.
+- **Game names.** The game sometimes reports a different name than the journal uses, for example "Kirtonos" for "Kirtonos the Herald" or "Ras Frostwhisperer" for "Ras Frostwhisper". Both tick the same row, and the row switches to the game's name. Bosses the list doesn't know are added automatically.
 - **Minimap tooltip setting.** Under Appearance > Animation and sound, "Minimap tooltip shows" picks what the tooltip lists:
   - **Looted bosses** (as before);
   - **Bosses not looted yet**;

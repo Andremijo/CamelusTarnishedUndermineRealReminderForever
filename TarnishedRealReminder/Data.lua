@@ -39,85 +39,41 @@ ns.ELIGIBLE_INSTANCE_NAMES = {
     ["shaper's terrace"] = true,
     ["the shaper's terrace"] = true,
     ["blackmaw hold"] = true,
+    -- Wing names the game may report for split dungeons.
+    ["dire maul - warpwood quarter"] = true,
+    ["dire maul - capital gardens"] = true,
+    ["dire maul - gordok commons"] = true,
+    ["warpwood quarter"] = true,
+    ["capital gardens"] = true,
+    ["gordok commons"] = true,
+    ["stratholme - main gate"] = true,
+    ["stratholme - service entrance"] = true,
+    ["stratholme live"] = true,
+    ["stratholme undead"] = true,
 }
-
--- Boss names, used only as a fallback when the game does not report a kill
--- through ENCOUNTER_END: if one of these is seen dead (target, focus,
--- mouseover or a boss frame) it counts as a kill. Bosses below level 55 are
--- still filtered out by their level when the addon could read it.
-ns.BOSS_NAMES = {}
-local function add(list)
-    for _, name in ipairs(list) do ns.BOSS_NAMES[name:lower()] = true end
-end
-
--- Blackrock Depths
-add({
-    "High Interrogator Gerstahn", "Lord Roccor", "Houndmaster Grebmar",
-    "Anub'shiah", "Eviscerator", "Gorosh the Dervish", "Grizzle",
-    "Hedrum the Creeper", "Ok'thor the Breaker", "Theldren",
-    "Pyromancer Loregrain", "Warder Stilgiss", "Verek", "Watchman Doomgrip",
-    "Fineous Darkvire", "Lord Incendius", "Bael'Gar", "General Angerforge",
-    "Golem Lord Argelmach", "Hurley Blackbreath", "Phalanx",
-    "Ribbly Screwspigot", "Plugger Spazzring", "Ambassador Flamelash",
-    "Doom'rel", "Magmus", "Princess Moira Bronzebeard",
-    "Emperor Dagran Thaurissan",
-})
--- Blackrock Spire (lower and upper)
-add({
-    "Highlord Omokk", "Shadow Hunter Vosh'gajin", "War Master Voone",
-    "Mother Smolderweb", "Urok Doomhowl", "Quartermaster Zigris", "Halycon",
-    "Gizrul the Slavener", "Overlord Wyrmthalak", "Pyroguard Emberseer",
-    "Solakar Flamewreath", "Goraluk Anvilcrack", "Warchief Rend Blackhand",
-    "The Beast", "General Drakkisath",
-})
--- Dire Maul
-add({
-    "Pusillin", "Zevrim Thornhoof", "Hydrospawn", "Lethtendris",
-    "Alzzin the Wildshaper", "Tendris Warpwood", "Illyanna Ravenoak",
-    "Magister Kalendris", "Immol'thar", "Prince Tortheldrin",
-    "Guard Mol'dar", "Stomper Kreeg", "Guard Fengus", "Guard Slip'kik",
-    "Captain Kromcrush", "Cho'Rush the Observer", "King Gordok",
-})
--- Scholomance
-add({
-    "Kirtonos the Herald", "Jandice Barov", "Rattlegore", "Marduk Blackpool",
-    "Vectus", "Ras Frostwhisper", "Instructor Malicia",
-    "Doctor Theolen Krastinov", "Lorekeeper Polkelt", "The Ravenian",
-    "Lord Alexei Barov", "Lady Illucia Barov", "Darkmaster Gandling",
-})
--- Stratholme
-add({
-    "Timmy the Cruel", "Malor the Zealous", "Cannon Master Willey",
-    "Archivist Galford", "Balnazzar", "Hearthsinger Forresten",
-    "The Unforgiven", "Magistrate Barthilas", "Nerub'enkan",
-    "Baroness Anastari", "Maleki the Pallid", "Ramstein the Gorger",
-    "Baron Rivendare", "Postmaster Malown",
-})
--- Shaper's Terrace (WoW: Forever). Names from early community guides; the
--- addon learns the real ones from the game as you kill them.
-add({
-    "Titanosaur", "Thunderhoof", "Venomridge", "Direhorn Matriarch",
-    "Izha'Rel", "Tor'Rel", "Cinder", "King Op", "Snowtalon", "Bolt",
-    "Vitrix", "Nanaya",
-})
--- Blackmaw Hold (WoW: Forever). Same caveat.
-add({
-    "Withermaw", "Impaan the Imprisoner", "Elder Shaman Bloodmane",
-    "Bonesnout the Unbroken", "Blackmaw Behemoth", "Unbound Spirit",
-    "Varrox Bleakhoof",
-})
 
 ------------------------------------------------------------------------------
 -- Boss checklist (the "Bosses today" tab in the settings window)
 --
--- One entry per boss encounter, in dungeon order. Names follow the game's
--- encounter names where known (Scholomance is taken from what the game
--- reports in WoW: Forever); "aliases" lists other names guides use, so a kill
--- reported under either name ticks the same row. "low" marks bosses below
--- level 55 in Classic, which drop no Real; a level the addon reads in game
--- always wins over this. Bosses the game reports that are not listed here are
--- added to the checklist automatically, and names are also matched loosely
--- ("Kirtonos" = "Kirtonos the Herald").
+-- Boss lists and order follow Wowhead's WoW: Forever Dungeon Journal
+-- (wowhead.com/forever/dungeon-journal/...), November 2026. For Shaper's
+-- Terrace and Blackmaw Hold, which have no journal page there yet, they come
+-- from Wowhead's Forever guides, zone pages, kill statistics and hotfix notes.
+--
+--   aliases   other names for the same boss. The game's own encounter names
+--             (what ENCOUNTER_END reports, e.g. "Kirtonos") can differ from
+--             the journal's ("Kirtonos the Herald"); either ticks the row,
+--             and the row then shows the game's name.
+--   optional  rares, summoned and quest bosses: listed, but only counted
+--             once you get a Real from them.
+--   low       below level 55 in Classic, so no Real; a level the addon
+--             reads in game always wins over this.
+--
+-- instanceNames: the names GetInstanceInfo may report for the group, when
+-- they differ from the group name. Groups sharing an instance (the two halves
+-- of Blackrock Spire, the three wings of Dire Maul, both sides of
+-- Stratholme) are told apart by boss name. Bosses the game reports that are
+-- not listed here are added to the checklist automatically.
 ------------------------------------------------------------------------------
 ns.ROSTER = {
     {
@@ -126,73 +82,105 @@ ns.ROSTER = {
             { "High Interrogator Gerstahn", low = true },
             { "Lord Roccor", low = true },
             { "Houndmaster Grebmar", low = true },
-            { "Ring of Law", aliases = { "Gorosh the Dervish", "Grizzle", "Eviscerator", "Ok'thor the Breaker", "Anub'shiah", "Hedrum the Creeper" } },
-            { "Pyromancer Loregrain", low = true },
-            { "Lord Incendius", low = true },
-            { "Warder Stilgiss", aliases = { "Verek" } },
+            { "Ring of the Law", aliases = { "Ring of Law", "Gorosh the Dervish", "Grizzle", "Eviscerator",
+                                             "Ok'thor the Breaker", "Anub'shiah", "Hedrum the Creeper" } },
             { "Fineous Darkvire", low = true },
-            { "Bael'Gar", low = true },
+            { "Pyromancer Loregrain", low = true },
+            { "Bael'gar", low = true },
+            { "Lord Incendius", low = true },
             { "General Angerforge" },
             { "Golem Lord Argelmach" },
-            { "Hurley Blackbreath" },
             { "Phalanx" },
-            { "Ribbly Screwspigot" },
-            { "Plugger Spazzring" },
+            { "Hurley Blackbreath" },
             { "Ambassador Flamelash" },
-            { "The Seven", aliases = { "Doom'rel" } },
+            { "Chest of the Seven", aliases = { "The Seven", "Doom'rel" } },
             { "Magmus" },
             { "Emperor Dagran Thaurissan", aliases = { "Princess Moira Bronzebeard" } },
+            { "Warder Stilgiss & Verek", aliases = { "Warder Stilgiss", "Verek" }, optional = true },
+            { "Panzor the Invincible", optional = true },
         },
     },
     {
-        name = "Blackrock Spire", ids = { 229 },
-        instanceNames = { "lower blackrock spire", "upper blackrock spire" },
+        name = "Lower Blackrock Spire", ids = { 229 },
+        instanceNames = { "blackrock spire", "lower blackrock spire" },
         bosses = {
             { "Highlord Omokk" },
             { "Shadow Hunter Vosh'gajin" },
             { "War Master Voone" },
+            { "Mor Grayhoof", optional = true },
             { "Mother Smolderweb" },
             { "Urok Doomhowl" },
             { "Quartermaster Zigris" },
             { "Halycon" },
             { "Gizrul the Slavener" },
             { "Overlord Wyrmthalak" },
-            { "Pyroguard Emberseer" },
-            { "Solakar Flamewreath" },
-            { "Warchief Rend Blackhand", aliases = { "Gyth" } },
-            { "The Beast" },
-            { "General Drakkisath" },
+            { "Spirestone Butcher", optional = true },
+            { "Spirestone Battle Lord", optional = true },
+            { "Bannok Grimaxe", optional = true },
+            { "Crystal Fang", optional = true },
         },
     },
     {
-        name = "Dire Maul", ids = { 429 },
+        name = "Upper Blackrock Spire", ids = { 229 },
+        instanceNames = { "blackrock spire", "upper blackrock spire" },
         bosses = {
-            { "Zevrim Thornhoof" },
-            { "Hydrospawn" },
+            { "Pyroguard Emberseer" },
+            { "Solakar Flamewreath" },
+            { "Goraluk Anvilcrack" },
+            { "Warchief Rend Blackhand & Gyth", aliases = { "Warchief Rend Blackhand", "Gyth" } },
+            { "The Beast" },
+            { "General Drakkisath" },
+            { "Jed Runewatcher", optional = true },
+        },
+    },
+    {
+        name = "Dire Maul East", ids = { 429 },
+        instanceNames = { "dire maul", "dire maul - warpwood quarter", "warpwood quarter" },
+        bosses = {
+            { "Pusillin" },
             { "Lethtendris" },
+            { "Hydrospawn" },
+            { "Zevrim Thornhoof" },
             { "Alzzin the Wildshaper" },
+            { "Isalien", optional = true },
+        },
+    },
+    {
+        name = "Dire Maul West", ids = { 429 },
+        instanceNames = { "dire maul", "dire maul - capital gardens", "capital gardens" },
+        bosses = {
             { "Tendris Warpwood" },
-            { "Illyanna Ravenoak" },
             { "Magister Kalendris" },
+            { "Illyanna Ravenoak" },
             { "Immol'thar" },
             { "Prince Tortheldrin" },
+            { "Tzu'see", aliases = { "Tsu'zee" }, optional = true },
+            { "Lord Hel'nurath", optional = true },
+        },
+    },
+    {
+        name = "Dire Maul North", ids = { 429 },
+        instanceNames = { "dire maul", "dire maul - gordok commons", "gordok commons" },
+        bosses = {
             { "Guard Mol'dar" },
             { "Stomper Kreeg" },
             { "Guard Fengus" },
             { "Guard Slip'kik" },
             { "Captain Kromcrush" },
-            { "King Gordok", aliases = { "Cho'Rush the Observer" } },
+            { "King Gordok & Cho'Rush the Observer", aliases = { "King Gordok", "Cho'Rush the Observer" } },
         },
     },
     {
         name = "Scholomance", ids = { 289 },
         bosses = {
-            { "Kirtonos", aliases = { "Kirtonos the Herald" } },
+            { "Blood Steward of Kirtonos", optional = true },
+            { "Kirtonos the Herald", aliases = { "Kirtonos" } },
             { "Jandice Barov" },
             { "Rattlegore" },
             { "Marduk Blackpool" },
             { "Vectus" },
-            { "Ras Frostwhisperer", aliases = { "Ras Frostwhisper" } },
+            { "Ras Frostwhisper", aliases = { "Ras Frostwhisperer" } },
+            { "Kormok", optional = true },
             { "Instructor Malicia" },
             { "Doctor Theolen Krastinov" },
             { "Lorekeeper Polkelt" },
@@ -203,37 +191,69 @@ ns.ROSTER = {
         },
     },
     {
-        name = "Stratholme", ids = { 329 },
+        name = "Stratholme Live", ids = { 329 },
+        instanceNames = { "stratholme", "stratholme - main gate", "stratholme live" },
         bosses = {
-            { "Hearthsinger Forresten" },
+            { "Ezra Grimm" },
+            { "The Unforgiven" },
+            { "Postmaster Malown" },
             { "Timmy the Cruel" },
             { "Malor the Zealous", aliases = { "Commander Malor" } },
             { "Cannon Master Willey", aliases = { "Willey Hopebreaker" } },
             { "Archivist Galford", aliases = { "Instructor Galford" } },
             { "Balnazzar", aliases = { "Grand Crusader Dathrohan" } },
-            { "The Unforgiven" },
-            { "Baroness Anastari" },
-            { "Nerub'enkan" },
-            { "Maleki the Pallid" },
-            { "Magistrate Barthilas" },
-            { "Ramstein the Gorger" },
-            { "Baron Rivendare", aliases = { "Lord Aurius Rivendare" } },
+            { "Skul", optional = true },
+            { "Hearthsinger Forresten", optional = true },
         },
     },
     {
-        name = "Shaper's Terrace", instanceNames = { "the shaper's terrace" },
+        name = "Stratholme Undead", ids = { 329 },
+        instanceNames = { "stratholme", "stratholme - service entrance", "stratholme undead" },
         bosses = {
-            { "Titanosaur" }, { "Ravasaur Hunters", aliases = { "Izha'Rel", "Tor'Rel" } },
-            { "Thunderhoof" }, { "Venomridge" }, { "Direhorn Matriarch" },
-            { "Cinder" }, { "King Op" }, { "Snowtalon" }, { "Bolt" }, { "Vitrix" }, { "Nanaya" },
+            { "Magistrate Barthilas" },
+            { "Nerub'enkan" },
+            { "Baroness Anastari" },
+            { "Maleki the Pallid" },
+            { "Ramstein the Gorger" },
+            { "Baron Rivendare", aliases = { "Lord Aurius Rivendare" } },
+            { "Stonespine", optional = true },
+        },
+    },
+    {
+        -- The four raptors (summoned with Power Crystals) open the way to the
+        -- final boss, Nanaya. Wowhead mentions optional dinosaurs too, without
+        -- names; they are added automatically when killed.
+        name = "The Shaper's Terrace", instanceNames = { "shaper's terrace", "the shaper's terrace" },
+        bosses = {
+            { "Cinder" }, { "Snowtalon" }, { "Bolt" }, { "Vitrix" }, { "Nanaya" },
         },
     },
     {
         name = "Blackmaw Hold",
         bosses = {
-            { "Withermaw" }, { "Impaan the Imprisoner" }, { "Elder Shaman Bloodmane" },
-            { "Bonesnout the Unbroken" }, { "Blackmaw Behemoth" }, { "Unbound Spirit" },
+            { "Withermaw" },
+            { "Impaan the Imprisoner" },
+            { "Bonesnout the Unbroken" },
+            { "Unbound Spirit" },
+            { "Clawbert and the Blackmaw Behemoth", aliases = { "Blackmaw Behemoth", "Clawbert" } },
+            { "Elder Shaman Bloodmane" },
             { "Varrox Bleakhoof" },
+            { "Moontouched Wanderer", optional = true },
+            { "Tunnelweb Matriarch", optional = true },
+            { "Mopes", optional = true },
+            { "Gortek the Apprentice", optional = true },
         },
     },
 }
+
+-- Boss names used only as a fallback when the game does not report a kill
+-- through ENCOUNTER_END: if one of these is seen dead (target, focus,
+-- mouseover or a boss frame) it counts as a kill. Built from ns.ROSTER so
+-- there is one list to maintain.
+ns.BOSS_NAMES = {}
+for _, def in ipairs(ns.ROSTER) do
+    for _, b in ipairs(def.bosses) do
+        ns.BOSS_NAMES[b[1]:lower()] = true
+        for _, a in ipairs(b.aliases or {}) do ns.BOSS_NAMES[a:lower()] = true end
+    end
+end

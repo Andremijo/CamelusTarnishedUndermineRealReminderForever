@@ -69,7 +69,9 @@ Each dungeon shows a count such as `13/13`. It's green when the dungeon is done 
 
 Open it with `/cturr bosses` or by shift-clicking the minimap button.
 Hover over a boss for details. Right-click a boss to ignore it if it doesn't exist in this version of the game or never drops a Real.
-The list starts from guide names and switches to the names the game reports as you kill bosses. Bosses the game reports that aren't in the list are added automatically.
+The boss lists follow Wowhead's WoW: Forever Dungeon Journal, including its split into Lower/Upper Blackrock Spire, Dire Maul East/West/North and Stratholme Live/Undead. Shaper's Terrace and Blackmaw Hold come from Wowhead's Forever guides, since they have no journal page yet.
+Rares and summoned or quest bosses are marked optional: they're listed, but only counted once they give you a Real.
+When the game reports a boss under a different name than the journal ("Kirtonos" for "Kirtonos the Herald"), the row switches to the game's name. Bosses the game reports that aren't in the list are added automatically.
 
 ## Customising the reminder
 
