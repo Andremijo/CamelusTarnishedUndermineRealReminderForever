@@ -2,6 +2,13 @@
 
 Each `## vX.Y.Z` section below becomes the notes of that version's GitHub Release, published automatically when the version reaches `main`.
 
+## v1.2.6
+
+**Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.
+
+### Fixed
+- **Hearthsinger Forresten no longer reminds you.** He's a rare in Stratholme and confirmed in game to drop no Real. The checklist shows "drops no Real".
+
 ## v1.2.5
 
 **Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.

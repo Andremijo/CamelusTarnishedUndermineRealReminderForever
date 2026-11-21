@@ -105,6 +105,15 @@ kill("The Seven", 57, "Doom'rel")
 kill("Hate'rel", 55)
 check(#CDB.pending == 0, "Chest of the Seven and its dwarves never remind")
 
+-- Hearthsinger Forresten (Stratholme): confirmed in game, no Real.
+enter("Stratholme", 329)
+kill("Hearthsinger Forresten", 60)
+kill("Hearthsinger Forresten", SECRET)
+check(#CDB.pending == 0, "Hearthsinger Forresten never reminds (confirmed no Real)")
+r = row("Stratholme Live", "Hearthsinger Forresten")
+check(r and r.status == "low" and ns.Roster.STATUS.low.text(r) == "drops no Real", "checklist: Forresten drops no Real")
+enter("Blackrock Depths", 230)
+
 -- High Interrogator Gerstahn and Lord Roccor: confirmed in game, no Real,
 -- whatever level is read (even a wrong 58).
 kill("High Interrogator Gerstahn", 58)

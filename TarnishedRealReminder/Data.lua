@@ -221,7 +221,7 @@ ns.ROSTER = {
             { "Archivist Galford", aliases = { "Instructor Galford" } },
             { "Balnazzar", aliases = { "Grand Crusader Dathrohan" } },
             { "Skul", optional = true },
-            { "Hearthsinger Forresten", optional = true },
+            { "Hearthsinger Forresten", optional = true, noReal = true }, -- confirmed in game: no Real
         },
     },
     {
