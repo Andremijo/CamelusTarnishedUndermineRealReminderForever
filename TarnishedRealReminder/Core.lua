@@ -99,7 +99,13 @@ local DEFAULTS = {
     soundKey = "raid_warning", -- see ns.SOUNDS
     soundCustom = "",         -- sound file path or FileDataID when soundKey == "custom"
     soundChannel = "Master",
-    raidWarning = true,       -- big text in the middle of the screen
+    raidWarning = true,       -- also show the big warning text (see "warning" below)
+    warning = {               -- the addon's own movable warning text
+        point = nil,          -- { point, relativePoint, x, y }; nil = under the banner
+        size = 24, font = "friz", outline = "THICKOUTLINE",
+        color = { 1, 0.45, 0.1, 1 },
+        duration = 5,         -- seconds before it fades out
+    },
     chatAlerts = true,        -- a chat line on each kill
     flashTaskbar = true,
     nagSeconds = 20,          -- repeat the sound while a Real is waiting (0 = off)
@@ -153,6 +159,10 @@ local function initDB()
     TarnishedRealReminderDB = TarnishedRealReminderDB or {}
     TarnishedRealReminderCharDB = TarnishedRealReminderCharDB or {}
     DB, CDB = TarnishedRealReminderDB, TarnishedRealReminderCharDB
+    -- Settings version 2 (addon 1.1.2): the warning text moved from the game's
+    -- RaidWarningFrame, which sat on top of the banner, to the addon's own
+    -- movable frame under it. The on/off choice carries over unchanged.
+    DB.settingsVersion = 2
     applyDefaults(DB, DEFAULTS)
     applyDefaults(CDB, {
         resetAt = nil,
@@ -319,10 +329,7 @@ end
 
 local function alert(text, intro)
     ns.PlayAlertSound()
-    if DB.raidWarning and RaidNotice_AddMessage and RaidWarningFrame then
-        try(RaidNotice_AddMessage, RaidWarningFrame, text,
-            (ChatTypeInfo and ChatTypeInfo["RAID_WARNING"]) or { r = 1, g = 0.8, b = 0 })
-    end
+    if DB.raidWarning and ns.Banner then ns.Banner.ShowWarning(text) end
     if DB.flashTaskbar then try(FlashClientIcon) end
     if intro and ns.Banner then ns.Banner.PlayIntro() end
     state.lastNag = GetTime()
@@ -709,7 +716,7 @@ local function slash(msg)
     elseif cmd == "sound" then
         DB.sound = not DB.sound; say("Sound " .. (DB.sound and "on" or "off") .. ".")
     elseif cmd == "warning" then
-        DB.raidWarning = not DB.raidWarning; say("Raid warning text " .. (DB.raidWarning and "on" or "off") .. ".")
+        DB.raidWarning = not DB.raidWarning; say("Warning text " .. (DB.raidWarning and "on" or "off") .. ".")
     elseif cmd == "nag" then
         local n = tonumber(arg)
         if n then DB.nagSeconds = math.max(0, math.floor(n)) end

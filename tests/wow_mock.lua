@@ -57,6 +57,11 @@ function T.advance(sec)
         for _, t in ipairs(T.tickers) do
             if t.next <= T.now + 1e-9 then t.next = t.next + t.every; t.fn() end
         end
+        -- Like the game, run OnUpdate on every visible frame each step.
+        for _, f in ipairs(T.frames) do
+            local fn = f.scripts and f.scripts.OnUpdate
+            if fn and T.isVisible(f) then fn(f, 0.1) end
+        end
     end
 end
 
@@ -147,6 +152,14 @@ function CreateFrame(otype, name, parent)
     return o
 end
 
+function T.isVisible(f)
+    while f do
+        if f.shown == false then return false end
+        f = f.parent
+    end
+    return true
+end
+
 function T.click(frame, button)
     assert(frame.scripts.OnClick, "frame has no OnClick")
     frame.scripts.OnClick(frame, button or "LeftButton")
@@ -157,7 +170,8 @@ DEFAULT_CHAT_FRAME = { AddMessage = function(_, msg) table.insert(T.chat, msg) e
 RaidWarningFrame = {}
 ChatTypeInfo = { RAID_WARNING = { r = 1, g = 0.5, b = 0 } }
 SOUNDKIT = { RAID_WARNING = 8959 }
-function RaidNotice_AddMessage(_, text) table.insert(T.warnings, text) end
+T.blizzardWarnings = {}
+function RaidNotice_AddMessage(_, text) table.insert(T.blizzardWarnings, text) end
 function PlaySound() T.sounds = T.sounds + 1 end
 function FlashClientIcon() end
 function InCombatLockdown() return T.combat end

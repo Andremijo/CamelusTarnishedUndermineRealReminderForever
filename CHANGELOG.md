@@ -2,6 +2,22 @@
 
 Each `## vX.Y.Z` section below becomes the notes of that version's GitHub Release, published automatically when the version reaches `main`.
 
+## v1.1.2
+
+**Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.
+
+### Fixed
+- The reminder no longer shows its text twice on top of itself. The big "Loot the Tarnished Undermine Real from …" text used the game's raid-warning frame, which sits right where the banner is. It now has its own frame, and by default that frame sits under the banner.
+
+### New
+- **Movable warning text.** A new **Warning text** column in the settings (`/cturr`) controls it:
+  - on or off;
+  - horizontal and vertical position, or untick **Lock** and drag it;
+  - text size, colour, font and outline;
+  - how many seconds it stays before fading out.
+  There's also **Show test warning** and **Reset warning to defaults**.
+- The game's own raid-warning frame is left alone, so raid leaders' warnings still appear where they always did.
+
 ## v1.1.1
 
 **Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.
