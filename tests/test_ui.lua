@@ -108,7 +108,7 @@ mm.scripts.OnEnter(mm)
 tip = T.tooltipText()
 check(tip:find("Magmus | 1 Real", 1, true) ~= nil and tip:find("Golem Lord Argelmach | not looted", 1, true) ~= nil,
     "both mode lists looted and not looted")
-check(tip:find("Blackrock Depths | 2/9", 1, true) ~= nil, "dungeon count in the tooltip")
+check(tip:find("Blackrock Depths | 2/10", 1, true) ~= nil, "dungeon count in the tooltip")
 DB.tooltipShows = "looted"
 mm.scripts.OnLeave(mm)
 ns.dismissAll()

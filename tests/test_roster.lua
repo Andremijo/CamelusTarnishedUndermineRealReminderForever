@@ -84,7 +84,7 @@ check(rowOf(scholo, "Kormok").status == "optional", "summoned boss shown as opti
 local brd = group("Blackrock Depths")
 check(#brd.rows == 18, "BRD: Wowhead's 18 journal entries")
 check(rowOf(brd, "Lord Roccor").status == "low", "Lord Roccor (51) shown as below 55")
-check(brd.total == 9, "BRD counts only level 55+ non-optional bosses (" .. brd.total .. ")")
+check(brd.total == 10, "BRD counts level 55+ bosses plus Darkvire (54, confirmed Real) (" .. brd.total .. ")")
 check(rowOf(brd, "Ribbly Screwspigot") == nil, "Ribbly isn't a Forever journal boss")
 
 -- The run from the screenshot: all 13 Scholomance bosses, with the game's names.
@@ -123,21 +123,29 @@ enter("Stormwind City", 0); T.instance.type = "none"; T.fire("ZONE_CHANGED_NEW_A
 strat = group("Stratholme Undead")
 check(rowOf(strat, "Baron Rivendare").status == "missed" and strat.missed == 1, "after leaving: missed")
 
--- A level read in game overrides the guide's "below 55".
+-- Wowhead's level wins over a level read in game (which can be an add's, or
+-- stale): Roccor (51 on Wowhead) read as 56 still gives no reminder.
 enter("Blackrock Depths", 230)
-local roccor = kill("Lord Roccor", 56)
+kill("Lord Roccor", 56)
 brd = group("Blackrock Depths")
-check(rowOf(brd, "Lord Roccor").status == "waiting", "Roccor at level 56 counts")
-check(brd.total == 10, "BRD total now includes Roccor (" .. brd.total .. ")")
-lootNothing(roccor)
+check(rowOf(brd, "Lord Roccor").status == "low" and #ns.CDB.pending == 1, "Roccor read as 56: still below 55, no reminder")
+check(brd.total == 10, "BRD total unchanged (" .. brd.total .. ")")
+
+-- A boss's corpse with nothing for us counts as done for today.
+local angerforge = kill("General Angerforge", 57)
 brd = group("Blackrock Depths")
-check(rowOf(brd, "Lord Roccor").status == "none" and brd.done == 1, "dismissed corpse counts as done, nothing for you")
+check(rowOf(brd, "General Angerforge").status == "waiting", "Angerforge waiting")
+lootNothing(angerforge)
+brd = group("Blackrock Depths")
+check(rowOf(brd, "General Angerforge").status == "none" and brd.done == 1, "corpse without a Real counts as done, nothing for you")
 
 -- Ignore a boss.
 local seven = rowOf(brd, "The Seven")
 R.ToggleIgnore(seven)
 brd = group("Blackrock Depths")
-check(rowOf(brd, "The Seven").status == "ignored" and brd.total == 9, "ignored boss left out of the count")
+-- 10 counted minus The Seven. (Angerforge, done today as "nothing for you",
+-- still counts today; from tomorrow he's learned as no-Real.)
+check(rowOf(brd, "The Seven").status == "ignored" and brd.total == 9, "ignored boss left out of the count (" .. brd.total .. ")")
 R.ToggleIgnore(rowOf(brd, "The Seven"))
 check(rowOf(group("Blackrock Depths"), "The Seven").status == "todo", "un-ignored")
 

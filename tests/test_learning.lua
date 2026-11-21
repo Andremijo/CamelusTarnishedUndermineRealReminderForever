@@ -77,10 +77,95 @@ check(#CDB.pending == 0, "Incendius (53), no boss frame at all: no reminder")
 kill("Magmus", SECRET)
 check(#CDB.pending == 1, "Magmus (57), level hidden: reminder")
 ns.dismissAll()
-local r = row("Blackrock Depths", "High Interrogator Gerstahn")
-check(r.status == "low" and ns.Roster.STATUS.low.text(r) == "level 52, no Real", "checklist: level 52, no Real")
+local r = row("Blackrock Depths", "Houndmaster Grebmar")
+check(r.status == "low" and ns.Roster.STATUS.low.text(r) == "level 52, no Real", "checklist: Grebmar level 52, no Real")
+r = row("Blackrock Depths", "High Interrogator Gerstahn")
+check(r.status == "low" and ns.Roster.STATUS.low.text(r) == "drops no Real", "checklist: Gerstahn drops no Real")
 r = row("Blackrock Depths", "Phalanx")
 check(r.level == 55 and r.status == "todo", "Phalanx (55) counts")
+
+-- High Interrogator Gerstahn and Lord Roccor: confirmed in game, no Real,
+-- whatever level is read (even a wrong 58).
+kill("High Interrogator Gerstahn", 58)
+kill("Lord Roccor", 58)
+check(#CDB.pending == 0, "Gerstahn and Roccor never remind (confirmed no Real)")
+r = row("Blackrock Depths", "Lord Roccor")
+check(r.status == "low" and ns.Roster.STATUS.low.text(r) == "drops no Real", "checklist: Roccor drops no Real")
+
+-- Fineous Darkvire is level 54 but confirmed in game to drop a Real: he
+-- always reminds, whatever his level.
+kill("Fineous Darkvire", 54)
+check(#CDB.pending == 1, "Darkvire (54, confirmed Real): reminder")
+r = row("Blackrock Depths", "Fineous Darkvire")
+check(r.level == 54 and r.status == "waiting", "checklist counts Darkvire")
+ns.dismissAll()
+
+-- For bosses without such a confirmation, Wowhead's level beats anything read
+-- in game (Lord Incendius, 53):
+--   an add at a higher level on another boss frame,
+T.units.boss2 = { name = "Fireguard Destroyer", level = 58, guid = "G-add" }
+kill("Lord Incendius", SECRET)
+T.units.boss2 = nil
+check(#CDB.pending == 0, "Incendius with a level-58 add: no reminder")
+--   a wrong level read for him,
+kill("Lord Incendius", 58)
+check(#CDB.pending == 0, "Incendius read as 58: no reminder (Wowhead says 53)")
+--   or a wrong level stored by an older version.
+DB.bossLevels["lord incendius"] = 58
+kill("Lord Incendius", nil, false)
+check(#CDB.pending == 0, "Incendius with a stale stored level 58: no reminder")
+r = row("Blackrock Depths", "Lord Incendius")
+check(r.level == 53 and r.status == "low", "checklist shows Wowhead's 53, not the stored 58")
+
+-- A below-55 boss that does give a Real is learned: no reminder the first
+-- time, but the Real is recorded, and from then on it reminds.
+nextDay()
+local pyro = kill("Pyromancer Loregrain", SECRET)
+check(#CDB.pending == 0, "Loregrain (52): no reminder the first time")
+openCorpse(pyro, { { name = REAL, id = REAL_ID } })
+check(CDB.looted["pyromancer loregrain"] and DB.realBosses["pyromancer loregrain"], "its Real is recorded and learned")
+check(T.chatContains("does drop them"), "the player is told")
+kill("Pyromancer Loregrain", SECRET)
+check(#CDB.pending == 0, "same day again: already looted, no reminder")
+nextDay()
+kill("Pyromancer Loregrain", SECRET)
+check(#CDB.pending == 1, "next day: Loregrain reminds")
+r = row("Blackrock Depths", "Pyromancer Loregrain")
+check(r.status == "waiting", "checklist counts Loregrain now")
+ns.dismissAll()
+DB.realBosses["pyromancer loregrain"] = nil
+
+-- An add's level is never stored as the boss's.
+DB.bossLevels["general angerforge"] = nil
+T.units.boss2 = { name = "Anvilrage Reservist", level = 58, guid = "G-add2" }
+kill("General Angerforge", SECRET)
+T.units.boss2 = nil
+check(DB.bossLevels["general angerforge"] == nil, "an add's level isn't saved as the boss's level")
+ns.dismissAll()
+-- A boss Wowhead has no level for still uses its own level read in game.
+enter("Blackmaw Hold", 99902)
+kill("Varrox Bleakhoof", 52)
+check(#CDB.pending == 0, "unlisted boss read as 52: no reminder")
+kill("Unbound Spirit", 60)
+check(#CDB.pending == 1, "unlisted boss read as 60: reminder")
+ns.dismissAll()
+DB.noRealBosses = {}
+DB.bossLevels["varrox bleakhoof"], DB.bossLevels["unbound spirit"] = nil, nil
+CDB.looted["varrox bleakhoof"], CDB.looted["unbound spirit"] = nil, nil
+enter("Blackrock Depths", 230)
+
+-- Warder Stilgiss is level 56 but drops no Real (reported in game).
+kill("Warder Stilgiss", 56)
+check(#CDB.pending == 0, "Warder Stilgiss, level 56 read: no reminder (drops no Real)")
+kill("Warder Stilgiss & Verek", SECRET)
+check(#CDB.pending == 0, "Warder Stilgiss & Verek, level hidden: no reminder")
+kill("Verek", nil, false)
+check(#CDB.pending == 0, "Verek: no reminder")
+r = row("Blackrock Depths", "Warder Stilgiss & Verek")
+check(r.status == "low" and ns.Roster.STATUS.low.text(r) == "drops no Real", "checklist: drops no Real")
+table.insert(CDB.pending, { key = "warder stilgiss", name = "Warder Stilgiss", t = 0, instance = "Blackrock Depths", guids = {} })
+T.fire("PLAYER_ENTERING_WORLD"); T.advance(3.5)
+check(#CDB.pending == 0, "a waiting Stilgiss reminder is dropped at the loading screen")
 
 -- Ring of the Law: the challenger who shows up decides.
 kill("Ring of the Law", SECRET, "Grizzle")
@@ -127,11 +212,30 @@ r = row("Blackmaw Hold", "Withermaw")
 check(r.status == "low" and ns.Roster.STATUS.low.text(r) == "no Real (learned)", "checklist: no Real (learned)")
 check(total("Blackmaw Hold") == 6, "learned boss left out of the count (" .. tostring(total("Blackmaw Hold")) .. ")")
 
--- A level read in game still wins, and a Real from it unlearns it.
+-- What was learned from the corpse beats a level read in game (Warder
+-- Stilgiss is level 56 and drops no Real)...
 local g2 = kill("Withermaw", 59)
-check(#CDB.pending == 1, "readable level 59 reminds despite the learning")
+check(#CDB.pending == 0, "learned no-Real beats a readable level 59")
+r = row("Blackmaw Hold", "Withermaw")
+check(r.status == "low" and ns.Roster.STATUS.low.text(r) == "no Real (learned)", "checklist still: no Real (learned)")
+-- ...but the moment it does give a Real, the learning is undone.
 openCorpse(g2, { { name = REAL, id = REAL_ID } })
-check(DB.noRealBosses["withermaw"] == nil, "looting a Real from it unlearns it")
+check(DB.noRealBosses["withermaw"] == nil, "looting a Real from it unlearns it, even without a reminder")
+check(CDB.looted["withermaw"] and not CDB.looted["withermaw"].none, "and that Real is recorded")
+nextDay()
+kill("Withermaw", 59)
+check(#CDB.pending == 1, "after unlearning it reminds again")
+ns.dismissAll()
+
+-- A level-56 boss whose corpse has no Real is learned and stays quiet,
+-- even with its level readable.
+enter("Blackmaw Hold", 99902)
+local g3 = kill("Elder Shaman Bloodmane", 56)
+check(#CDB.pending == 1, "level 56 boss reminds the first time")
+openCorpse(g3, { { name = "Totem of Something", quality = 3 } })
+nextDay()
+kill("Elder Shaman Bloodmane", 56)
+check(#CDB.pending == 0, "level 56 boss learned as no-Real stays quiet")
 
 -- /trr relearn.
 DB.noRealBosses["varrox bleakhoof"] = "Varrox Bleakhoof"

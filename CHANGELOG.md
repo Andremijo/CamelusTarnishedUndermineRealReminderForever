@@ -2,6 +2,23 @@
 
 Each `## vX.Y.Z` section below becomes the notes of that version's GitHub Release, published automatically when the version reaches `main`.
 
+## v1.2.2
+
+**Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.
+
+### Fixed
+- **Level 55 is only a guide, so what happens in game now wins.**
+  - **Warder Stilgiss & Verek no longer remind you.** Stilgiss is level 56 but drops no Real. The checklist shows "drops no Real".
+  - **Fineous Darkvire reminds you again.** He's level 54 but does drop a Real. Version 1.2.1 had stopped reminding about him.
+  - **High Interrogator Gerstahn and Lord Roccor** are confirmed in game to drop no Real, and never remind you.
+- **The addon learns both ways from loot:**
+  - **A boss gives you a Real the addon didn't expect** (a boss below 55): it's recorded as looted for today, so you aren't reminded about it again today, and the addon reminds you about that boss from then on.
+  - **A boss's own corpse has no Real for you** on a day you hadn't looted it: the addon stops reminding about it, whatever its level.
+
+  Whichever happened last counts. Ring of the Law is never learned, and `/trr relearn` forgets everything learned.
+- **Wowhead's level beats what's read in game.** For bosses without such evidence, Wowhead's Forever level now wins over a level read during the fight, which can belong to an add, be hidden, or be a wrong value saved by an older version. The addon also no longer takes the highest level of all boss frames in a fight (an add's could win), and never saves an add's level as the boss's.
+- Reminders still waiting for a boss that turns out to drop no Real disappear at the next loading screen.
+
 ## v1.2.1
 
 **Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.

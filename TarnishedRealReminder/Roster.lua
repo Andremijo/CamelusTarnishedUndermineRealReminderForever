@@ -20,6 +20,7 @@ Roster.STATUS = {
     optional = { color = { 0.62, 0.62, 0.62 }, text = "optional" },
     low     = { color = { 0.42, 0.42, 0.42 },
                 text = function(r)
+                    if r.noReal then return "drops no Real" end
                     if r.learnedNoReal then return "no Real (learned)" end
                     if type(r.level) == "number" and r.level > 0 then return "level " .. r.level .. ", no Real" end
                     return "below 55, no Real"
@@ -177,7 +178,7 @@ function Roster.Build()
                 for _, n in ipairs(names) do level = level or ns.BOSS_LEVELS[n:lower()] end
             end
             g.rows[#g.rows + 1] = { display = b[1], names = names, optional = b.optional, variable = b.variable,
-                                    listedLevel = level, static = true }
+                                    noReal = b.noReal, real = b.real, listedLevel = level, static = true }
         end
     end
 
@@ -233,20 +234,32 @@ function Roster.Build()
     for _, g in ipairs(groups) do
         g.total, g.done, g.missed, g.reals = 0, 0, 0, 0
         for _, r in ipairs(g.rows) do
-            -- Level: read in game (not for variable encounters), else Wowhead's.
-            local level
-            if not r.variable then
-                for _, n in ipairs(r.names) do level = level or DB.bossLevels[n:lower()] end
+            -- Level: Wowhead's, else the boss's own level read in game (never
+            -- for variable encounters like Ring of the Law).
+            local level = r.listedLevel
+            if not level and not r.variable then
+                for _, n in ipairs(r.names) do
+                    local l = DB.bossLevels[n:lower()]
+                    if not level and type(l) == "number" and l > 0 then level = l end
+                end
             end
-            if not (type(level) == "number" and level > 0) then level = r.listedLevel end
             r.level = level
             r.low, r.learnedNoReal = false, false
-            if type(level) == "number" and level > 0 then
-                r.low = level < ns.MIN_BOSS_LEVEL
-            elseif not r.variable then
+            local learned, learnedReal = false, false
+            if not r.variable then
                 for _, n in ipairs(r.names) do
-                    if DB.noRealBosses[n:lower()] then r.low, r.learnedNoReal = true, true end
+                    if DB.noRealBosses[n:lower()] then learned = true end
+                    if DB.realBosses[n:lower()] or ns.REAL_BOSSES[n:lower()] then learnedReal = true end
                 end
+            end
+            if r.noReal then
+                r.low = true
+            elseif r.real or learnedReal then
+                r.low = false -- drops a Real whatever its level
+            elseif learned then
+                r.low, r.learnedNoReal = true, true -- its corpse had no Real: beats any level
+            elseif type(level) == "number" and level > 0 then
+                r.low = level < ns.MIN_BOSS_LEVEL
             end
             r.ignored = DB.ignoredBosses[Roster.IgnoreKey(r)] and true or false
 

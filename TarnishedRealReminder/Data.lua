@@ -66,6 +66,10 @@ ns.ELIGIBLE_INSTANCE_NAMES = {
 --             and the row then shows the game's name.
 --   optional  rares, summoned and quest bosses: listed, but only counted
 --             once you get a Real from them.
+--   noReal    confirmed in game not to drop a Real, whatever its level
+--             (Warder Stilgiss is 56 and drops none).
+--   real      confirmed in game to drop a Real, whatever its level (Fineous
+--             Darkvire is 54 and drops one). The "55+" rule is only a guide.
 --   variable  the boss you fight changes from run to run (Ring of the Law
 --             picks one challenger; some are level 55+, some aren't). Its
 --             eligibility comes from the challenger seen in the fight, and the
@@ -83,12 +87,13 @@ ns.ROSTER = {
     {
         name = "Blackrock Depths", ids = { 230 },
         bosses = {
-            { "High Interrogator Gerstahn" },
-            { "Lord Roccor" },
+            { "High Interrogator Gerstahn", noReal = true }, -- confirmed in game: no Real
+            { "Lord Roccor", noReal = true },                -- confirmed in game: no Real
             { "Houndmaster Grebmar" },
             { "Ring of the Law", variable = true, aliases = { "Ring of Law", "Gorosh the Dervish", "Grizzle", "Eviscerator",
                                              "Ok'thor the Breaker", "Anub'shiah", "Hedrum the Creeper" } },
-            { "Fineous Darkvire" },
+            -- Level 54, but confirmed in game to drop a Real.
+            { "Fineous Darkvire", real = true },
             { "Pyromancer Loregrain" },
             { "Bael'gar" },
             { "Lord Incendius" },
@@ -100,7 +105,8 @@ ns.ROSTER = {
             { "Chest of the Seven", aliases = { "The Seven", "Doom'rel" } },
             { "Magmus" },
             { "Emperor Dagran Thaurissan", aliases = { "Princess Moira Bronzebeard" } },
-            { "Warder Stilgiss & Verek", aliases = { "Warder Stilgiss", "Verek" }, optional = true },
+            -- Level 56/55, but players report no Real from it.
+            { "Warder Stilgiss & Verek", aliases = { "Warder Stilgiss", "Verek" }, optional = true, noReal = true },
             { "Panzor the Invincible", optional = true },
         },
     },
@@ -250,6 +256,19 @@ ns.ROSTER = {
     },
 }
 
+-- Bosses confirmed not to drop a Real (noReal) and confirmed to drop one
+-- (real), by every name.
+ns.NO_REAL_BOSSES, ns.REAL_BOSSES = {}, {}
+for _, def in ipairs(ns.ROSTER) do
+    for _, b in ipairs(def.bosses) do
+        local set = (b.noReal and ns.NO_REAL_BOSSES) or (b.real and ns.REAL_BOSSES)
+        if set then
+            set[b[1]:lower()] = true
+            for _, a in ipairs(b.aliases or {}) do set[a:lower()] = true end
+        end
+    end
+end
+
 -- Boss names used only as a fallback when the game does not report a kill
 -- through ENCOUNTER_END: if one of these is seen dead (target, focus,
 -- mouseover or a boss frame) it counts as a kill. Built from ns.ROSTER so
@@ -264,7 +283,9 @@ end
 
 ------------------------------------------------------------------------------
 -- Boss levels, from Wowhead's WoW: Forever database (wowhead.com/forever/
--- npc=...), November 2026. Only level 55+ bosses drop a Real. Used when the
+-- npc=...), November 2026. Bosses of level 55+ usually drop a Real, so the
+-- level is the addon's first guess; what happens in game (the real/noReal
+-- flags above, and what the addon learns from loot) always wins. Used when the
 -- game won't tell the addon a boss's level (it often won't in dungeons); a
 -- level read in game always wins. Values marked "Classic" weren't found for
 -- Forever and are the Classic level (High Interrogator Gerstahn, confirmed
