@@ -33,7 +33,8 @@ Bosses of level 55 or higher in:
 - **Blackmaw Hold** (new, Azshara)
 
 The addon reads each boss's level during the fight, so bosses under 55 (Lord Roccor, for example) are skipped.
-In dungeons the game often won't tell addons a boss's level. Then the addon uses its boss list, which marks the Blackrock Depths bosses below 55, such as High Interrogator Gerstahn.
+In dungeons the game often won't tell addons a boss's level. Then the addon uses the levels from Wowhead's WoW: Forever database. Only Blackrock Depths has bosses below 55, such as High Interrogator Gerstahn (52).
+Ring of the Law picks a random challenger, and only Gorosh the Dervish (56) drops a Real, so the addon looks at who you actually fought.
 For a boss it knows nothing about, it reminds you anyway, because a needless reminder is better than a missed Real.
 If you then open that boss's corpse and there's no Real for you, the addon learns that the boss doesn't drop one and won't remind you again (`/trr relearn` undoes this).
 

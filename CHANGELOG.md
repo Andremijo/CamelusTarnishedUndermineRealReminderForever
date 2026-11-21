@@ -7,18 +7,20 @@ Each `## vX.Y.Z` section below becomes the notes of that version's GitHub Releas
 **Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.
 
 ### Fixed
-- **No more reminders for bosses below level 55**, such as High Interrogator Gerstahn (52) in Blackrock Depths. In dungeons the game often won't tell addons a boss's level. The addon then reminded you to be safe, even for bosses its own list marks as below 55. It now uses the list in that case:
-  - **Below 55 in Blackrock Depths:** Gerstahn, Lord Roccor, Houndmaster Grebmar, Fineous Darkvire, Pyromancer Loregrain, Bael'gar and Lord Incendius.
+- **No more reminders for bosses below level 55**, such as High Interrogator Gerstahn (52) in Blackrock Depths. In dungeons the game often won't tell addons a boss's level, and the addon then reminded you to be safe. It now knows every boss's level from Wowhead's WoW: Forever database:
+  - **Blackrock Depths** is the only dungeon with bosses below 55: Gerstahn, Lord Roccor, Houndmaster Grebmar, Fineous Darkvire, Pyromancer Loregrain, Bael'gar and Lord Incendius. These no longer remind you.
+  - **Every boss in Blackrock Spire, Dire Maul, Scholomance and Stratholme** is level 56–62 and reminds you as before.
+  - **Shaper's Terrace and Blackmaw Hold** have no levels on Wowhead yet. They're max-level dungeons whose loot needs level 55, so their bosses remind you.
   - **Level read in game:** when the addon can read a boss's level, that still decides.
-  - **Unknown bosses** whose level can't be read still get a reminder, so a Real is never missed.
-- A waiting reminder left over for such a boss disappears at the next loading screen.
+- **Ring of the Law picks a random challenger.** Gorosh the Dervish (56) drops a Real; Grizzle, Eviscerator and Anub'shiah (54) and Hedrum and Ok'thor (53) don't. The addon now looks at who you actually fought, from the boss frame or your target, and reminds you only for Gorosh. If it can't tell, it reminds you.
+- A waiting reminder left over for a below-55 boss disappears at the next loading screen.
+- The checklist shows these bosses as "level 52, no Real" and so on, and leaves them out of the dungeon's count.
 
 ### New
-- **Learns which bosses drop no Real.** If you open a boss's corpse and there's no Real for you on a day you hadn't looted that boss, it doesn't drop Reals, typically because it's below level 55. The addon remembers this and won't remind you about that boss again, so bosses below 55 that the list doesn't mark stop after the first time. Possible examples are Ring of the Law, or Dire Maul East and North if those really are below 55 in Forever.
-  - It only learns from the boss's own corpse (matched by id), never from trash loot.
-  - A level read in game still wins.
+- **Learns which bosses drop no Real**, for bosses Wowhead has no level for, such as the new dungeons. If you open a boss's own corpse and there's no Real for you on a day you hadn't looted it, it doesn't drop Reals, so the addon remembers this and stops reminding you about it.
+  - It never learns from trash loot, and never learns Ring of the Law.
   - Looting a Real from a learned boss unlearns it.
-  - The checklist shows such bosses as "no Real (learned)".
+  - The checklist shows "no Real (learned)".
   - `/trr relearn` forgets everything learned.
 
 ## v1.2.0

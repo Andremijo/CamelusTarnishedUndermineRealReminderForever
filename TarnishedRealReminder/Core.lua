@@ -359,23 +359,34 @@ ns.alert = alert
 
 -- Does this boss drop a Real? Decided by, in order:
 --   1. the level read in game, when it could be read (a real level, not "??");
---   2. learned: its corpse had no Real for you on a day you hadn't looted it;
---   3. the boss list's "below 55" flag (Data.lua), because in dungeons this
---      client often keeps unit levels secret from addons;
---   4. otherwise yes, so a Real is never missed.
--- Returns eligible, and a reason for the debug output.
-local function bossEligible(name, level, instanceName)
+--   2. Wowhead's level (ns.BOSS_LEVELS) of the units seen in the fight. For
+--      Ring of the Law that is the challenger who showed up this time;
+--   3. Wowhead's level for the boss itself;
+--   4. learned: its corpse had no Real for you on a day you hadn't looted it
+--      (never for a variable encounter like Ring of the Law);
+--   5. otherwise yes, so a Real is never missed.
+-- In dungeons this client often keeps unit levels secret from addons, which
+-- is why 2-4 exist. Returns eligible, and a reason for the debug output.
+local function bossEligible(name, level, instanceName, seenNames)
     if type(level) == "number" and level > 0 then
         return level >= ns.MIN_BOSS_LEVEL, "level " .. level
     end
-    if name and DB.noRealBosses[name:lower()] then
+    if seenNames then
+        local best
+        for seen in pairs(seenNames) do
+            local l = ns.BOSS_LEVELS[seen:lower()]
+            if l and (not best or l > best) then best = l end
+        end
+        if best then return best >= ns.MIN_BOSS_LEVEL, "fought a level " .. best .. " boss" end
+    end
+    local inst = instanceName or currentInstance()
+    local listed, variable = nil, false
+    if ns.Roster and ns.Roster.ListedLevel then listed, variable = ns.Roster.ListedLevel(name, inst) end
+    if listed then return listed >= ns.MIN_BOSS_LEVEL, "level " .. listed .. " (Wowhead)" end
+    if not variable and name and DB.noRealBosses[name:lower()] then
         return false, "its corpse had no Real before (learned)"
     end
-    if ns.Roster and ns.Roster.IsListedLow
-        and ns.Roster.IsListedLow(name, instanceName or currentInstance()) then
-        return false, "listed below level " .. ns.MIN_BOSS_LEVEL
-    end
-    return true, "level unknown"
+    return true, variable and "challenger unknown" or "level unknown"
 end
 ns.bossEligible = bossEligible
 
@@ -398,7 +409,7 @@ local function rememberBoss(name)
 end
 
 -- A boss died. Start a reminder unless it is not eligible or already looted.
-local function registerKill(name, level, source, guids, force)
+local function registerKill(name, level, source, guids, force, seenNames)
     if not name then return end
     checkDailyReset()
     if not force and not isEligibleInstance() then
@@ -406,7 +417,7 @@ local function registerKill(name, level, source, guids, force)
         return
     end
     if not force then
-        local ok, why = bossEligible(name, level)
+        local ok, why = bossEligible(name, level, nil, seenNames)
         if not ok then
             debug(string.format("%s: %s, below %d, so no Real.", name, why, ns.MIN_BOSS_LEVEL))
             return
@@ -557,15 +568,16 @@ local function readBossUnits()
             local guid = plain(try(UnitGUID, unit))
             if guid then enc.guids[guid] = true end
             local name = plain(try(UnitName, unit))
-            if name and type(lvl) == "number" then
-                state.levels[name:lower()] = lvl
+            if name then
+                enc.names[name] = true -- who we're fighting (Ring of the Law's challenger)
+                if type(lvl) == "number" then state.levels[name:lower()] = lvl end
             end
         end
     end
 end
 
 local function onEncounterStart(id, name)
-    state.encounter = { id = plain(id), name = plain(name), guids = {} }
+    state.encounter = { id = plain(id), name = plain(name), guids = {}, names = {} }
     readBossUnits()
     C_Timer.After(1, readBossUnits)
 end
@@ -583,10 +595,16 @@ local function onEncounterEnd(id, name, success)
     -- it can still be credited to the right boss.
     table.insert(state.recentKills, { name = name, guids = enc and enc.guids, instance = (currentInstance()), t = GetTime() })
     if #state.recentKills > 20 then table.remove(state.recentKills, 1) end
-    local level = (enc and enc.maxLevel) or bossLevel(name)
-    if type(level) == "number" then DB.bossLevels[name:lower()] = level end
+    -- A variable encounter (Ring of the Law) has a different boss each run:
+    -- never reuse or store a level under its name.
+    local variable = ns.Roster and ns.Roster.IsVariable and ns.Roster.IsVariable(name, currentInstance())
+    local level = enc and enc.maxLevel
+    if not variable then
+        level = level or bossLevel(name)
+        if type(level) == "number" and level > 0 then DB.bossLevels[name:lower()] = level end
+    end
     if isEligibleInstance() then rememberBoss(name) end
-    registerKill(name, level, "encounter", enc and enc.guids)
+    registerKill(name, level, "encounter", enc and enc.guids, nil, enc and enc.names)
 end
 
 local function onBossKill(id, name)
@@ -618,6 +636,9 @@ local function checkUnit(unit)
     local lvl = plain(try(UnitLevel, unit))
     if type(lvl) == "number" and not plain(try(UnitIsDead, unit)) then
         state.levels[lname] = lvl
+    end
+    if state.encounter and ns.BOSS_LEVELS[lname] then
+        state.encounter.names[name] = true -- e.g. Ring of the Law's challenger, seen as target
     end
     if not ns.BOSS_NAMES[lname] then return end
     if type(lvl) == "number" then DB.bossLevels[lname] = lvl end
@@ -684,7 +705,8 @@ local function onLootOpened()
     local idx = matchPendingByGuids(info.sources)
     if idx then
         local p = CDB.pending[idx]
-        if not p.test then
+        local variable = ns.Roster and ns.Roster.IsVariable and ns.Roster.IsVariable(p.name, p.instance)
+        if not p.test and not variable then
             DB.noRealBosses[p.key] = p.name
             say(string.format("|cffffffff%s|r had no Real for you, so it doesn't drop one. "
                 .. "You won't be reminded about it again (/trr relearn undoes this).", p.name))

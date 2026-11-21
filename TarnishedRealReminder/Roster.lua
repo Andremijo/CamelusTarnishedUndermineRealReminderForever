@@ -19,7 +19,11 @@ Roster.STATUS = {
     todo    = { color = { 1, 1, 1 },        text = "not looted" },
     optional = { color = { 0.62, 0.62, 0.62 }, text = "optional" },
     low     = { color = { 0.42, 0.42, 0.42 },
-                text = function(r) return r.learnedNoReal and "no Real (learned)" or "below 55, no Real" end },
+                text = function(r)
+                    if r.learnedNoReal then return "no Real (learned)" end
+                    if type(r.level) == "number" and r.level > 0 then return "level " .. r.level .. ", no Real" end
+                    return "below 55, no Real"
+                end },
     ignored = { color = { 0.42, 0.42, 0.42 }, text = "ignored" },
 }
 
@@ -119,17 +123,35 @@ function Roster.GroupNamesFor(instanceName)
     return names
 end
 
--- Does the boss list say this boss is below level 55 (no Real)? true / false
--- when the boss is listed for that dungeon, nil when it isn't.
-function Roster.IsListedLow(bossName, instanceName)
+-- The boss list's entry for a boss in a dungeon, or nil.
+local function listedBoss(bossName, instanceName)
     for _, i in ipairs(defIndexesFor(instanceName)) do
         for _, b in ipairs(ns.ROSTER[i].bosses) do
             local hit = Roster.Match(b[1], bossName)
             for _, a in ipairs(b.aliases or {}) do hit = hit or Roster.Match(a, bossName) end
-            if hit then return b.low and true or false end
+            if hit then return b end
         end
     end
-    return nil
+end
+
+-- Level of a boss from ns.BOSS_LEVELS (Wowhead), or nil. Second return:
+-- true for a "variable" encounter (Ring of the Law), whose level depends on
+-- the challenger and so can't come from its name.
+function Roster.ListedLevel(bossName, instanceName)
+    if not bossName then return nil end
+    local direct = ns.BOSS_LEVELS[bossName:lower()]
+    if direct then return direct, false end
+    local b = listedBoss(bossName, instanceName)
+    if not b then return nil, false end
+    if b.variable then return nil, true end
+    local level = ns.BOSS_LEVELS[b[1]:lower()]
+    for _, a in ipairs(b.aliases or {}) do level = level or ns.BOSS_LEVELS[a:lower()] end
+    return level, false
+end
+
+function Roster.IsVariable(bossName, instanceName)
+    local b = listedBoss(bossName, instanceName)
+    return b and b.variable and true or false
 end
 
 -- Key under which a row's "ignored" choice is saved.
@@ -150,7 +172,12 @@ function Roster.Build()
         for _, b in ipairs(def.bosses) do
             local names = { b[1] }
             for _, a in ipairs(b.aliases or {}) do names[#names + 1] = a end
-            g.rows[#g.rows + 1] = { display = b[1], names = names, low = b.low, optional = b.optional, static = true }
+            local level
+            if not b.variable then
+                for _, n in ipairs(names) do level = level or ns.BOSS_LEVELS[n:lower()] end
+            end
+            g.rows[#g.rows + 1] = { display = b[1], names = names, optional = b.optional, variable = b.variable,
+                                    listedLevel = level, static = true }
         end
     end
 
@@ -206,12 +233,17 @@ function Roster.Build()
     for _, g in ipairs(groups) do
         g.total, g.done, g.missed, g.reals = 0, 0, 0, 0
         for _, r in ipairs(g.rows) do
+            -- Level: read in game (not for variable encounters), else Wowhead's.
             local level
-            for _, n in ipairs(r.names) do level = level or DB.bossLevels[n:lower()] end
+            if not r.variable then
+                for _, n in ipairs(r.names) do level = level or DB.bossLevels[n:lower()] end
+            end
+            if not (type(level) == "number" and level > 0) then level = r.listedLevel end
             r.level = level
+            r.low, r.learnedNoReal = false, false
             if type(level) == "number" and level > 0 then
                 r.low = level < ns.MIN_BOSS_LEVEL
-            else
+            elseif not r.variable then
                 for _, n in ipairs(r.names) do
                     if DB.noRealBosses[n:lower()] then r.low, r.learnedNoReal = true, true end
                 end
