@@ -1,0 +1,132 @@
+# Publishes a GitHub Release for the addon version on main.
+#
+# Runs on every push to main (and by hand from the Actions tab). If there is
+# no release yet for the "## Version" in the .toc, it runs the tests, then
+# creates the tag vX.Y.Z and a release with the zip and the matching
+# CHANGELOG.md section. If that version is already released, it does nothing.
+#
+# The release is laid out for WoWUp's "Install from URL": a zip whose name ends
+# in -forever.zip plus a release.json (BigWigs format, flavor "forever").
+#
+# To release a new version:
+#   1. Bump "## Version" in TarnishedRealReminder/TarnishedRealReminder.toc
+#   2. Add a "## vX.Y.Z" section to CHANGELOG.md
+#   3. Run tools/build_zip.sh and commit the zip in releases/
+#   4. Merge to main
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read the addon version
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(sed -n 's/^## Version: *//p' TarnishedRealReminder/TarnishedRealReminder.toc | tr -d '\r')
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Bad ## Version in the .toc: '$version'" >&2
+            exit 1
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${version}" >> "$GITHUB_OUTPUT"
+          if gh release view "v${version}" >/dev/null 2>&1; then
+            echo "v${version} is already released; nothing to do."
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-python@v5
+        if: steps.version.outputs.exists == 'false'
+        with:
+          python-version: "3.12"
+
+      - name: Run the tests
+        if: steps.version.outputs.exists == 'false'
+        run: |
+          pip install lupa
+          python3 tests/run_tests.py
+
+      - name: Build the WoWUp release assets
+        id: assets
+        if: steps.version.outputs.exists == 'false'
+        run: |
+          # dist/<name>-v<version>-forever.zip, dist/release.json, dist/asset_label.txt
+          asset=$(python3 tools/release_assets.py)
+          echo "asset=${asset}" >> "$GITHUB_OUTPUT"
+
+      - name: Release notes from CHANGELOG.md
+        if: steps.version.outputs.exists == 'false'
+        run: |
+          awk -v want="## v${{ steps.version.outputs.version }}" '
+            $0 == want { on = 1; next }
+            on && /^## / { exit }
+            on { print }
+          ' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then
+            echo "Release of version ${{ steps.version.outputs.version }}." > notes.md
+          fi
+
+      - name: Publish the release
+        if: steps.version.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          ASSET: ${{ steps.assets.outputs.asset }}
+        run: |
+          label=$(cat dist/asset_label.txt)
+          # Not a draft and not a prerelease: WoWUp skips drafts and prefers stable releases.
+          gh release create "$TAG" \
+            "dist/${ASSET}#${label}" \
+            "dist/release.json" \
+            --target "${GITHUB_SHA}" \
+            --title "${label}" \
+            --notes-file notes.md \
+            --latest
+
+      - name: Check what WoWUp will see
+        if: steps.version.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          ASSET: ${{ steps.assets.outputs.asset }}
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" > release.json.out
+          python3 - <<'PY'
+          import json, os, re, sys
+          r = json.load(open("release.json.out"))
+          assets = {a["name"]: a for a in r["assets"]}
+          want = os.environ["ASSET"]
+          problems = []
+          if r["draft"] or r["prerelease"]:
+              problems.append("release is a draft or prerelease")
+          if want not in assets:
+              problems.append(f"asset {want} missing; got {sorted(assets)}")
+          elif assets[want]["content_type"] not in ("application/zip", "application/x-zip-compressed") and not (
+                  assets[want]["content_type"] == "application/octet-stream"
+                  and assets[want]["browser_download_url"].endswith(".zip")):
+              problems.append(f"zip content type is {assets[want]['content_type']}")
+          if not re.search(r"[-_](forever|camelot)\.zip$", want, re.I):
+              problems.append("zip name lacks the -forever suffix")
+          if "release.json" not in assets:
+              problems.append("release.json missing")
+          if problems:
+              sys.exit("WoWUp check failed: " + "; ".join(problems))
+          print("WoWUp check passed:", want, "+ release.json")
+          PY

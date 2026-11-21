@@ -3,7 +3,19 @@
 An addon that reminds you to loot your **Tarnished Undermine Real** from every boss that drops one,
 once per boss per day.
 
-**Download:** the latest zip is in [`releases/`](releases/). Each zip has the version in its name. To build one, bump `## Version` in the `.toc` and run `tools/build_zip.sh`.
+**Install with WoWUp (recommended):** in WoWUp 2.24.1 or later, pick your WoW: Forever installation, open **Get Addons**, choose **Install from URL**, and paste:
+
+```
+https://github.com/Andremijo/CamelusTarnishedUndermineRealReminderForever
+```
+
+WoWUp then keeps it updated from this repository's GitHub Releases.
+
+**Manual download:** get the zip from the latest [GitHub Release](../../releases/latest). The same zips are also kept in [`releases/`](releases/), each with its version in the name.
+
+**Making a release:** bump `## Version` in the `.toc`, add a `## vX.Y.Z` section to `CHANGELOG.md`, run `tools/build_zip.sh`, commit, and merge to `main`. The Release workflow sees the new version, runs the tests, and publishes the GitHub Release (tag `vX.Y.Z`) with the zip and that changelog section as its notes. A version that's already released is skipped.
+
+Each release is laid out the way WoWUp's GitHub support expects: the zip asset's name ends in `-forever.zip` (GitHub doesn't allow spaces or apostrophes in asset file names, so the asset is `Camelus-Tarnished-Undermine-Real-Reminder-vX.Y.Z-forever.zip`, labelled "Camelus' Tarnished Undermine Real Reminder vX.Y.Z"), and a `release.json` lists it under the `forever` flavor. `tools/release_assets.py` builds and checks these files; the workflow re-checks the published release.
 
 When an eligible boss dies, you get a pulsing banner, a raid-warning sound and the boss's name.
 The reminder stays up until the Real is in your bags. It repeats every 20 seconds when you're out of combat.
