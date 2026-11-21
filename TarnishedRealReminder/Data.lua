@@ -108,9 +108,9 @@ ns.ROSTER = {
             { "Magmus" },
             { "Emperor Dagran Thaurissan", aliases = { "Princess Moira Bronzebeard" } },
             -- Level 56/55, but players report no Real from it.
-            -- The game reports this fight as "The Vault". No Real (confirmed).
-            { "Warder Stilgiss & Verek", aliases = { "Warder Stilgiss", "Verek", "The Vault" }, optional = true,
-              noReal = true },
+            { "Warder Stilgiss & Verek", aliases = { "Warder Stilgiss", "Verek" }, optional = true, noReal = true },
+            -- Comes after Warder Stilgiss; the game reports it as a boss. No Real (confirmed).
+            { "The Vault", optional = true, noReal = true },
             { "Panzor the Invincible", optional = true },
             -- Not in Wowhead's journal, but the game reports them as bosses.
             -- Confirmed in game: no Real (Ribbly 53, Plugger 55).
