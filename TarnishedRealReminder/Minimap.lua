@@ -3,7 +3,8 @@
 -- The button is a LibDataBroker launcher drawn by LibDBIcon, the standard
 -- minimap button library, so minimap-button collectors and broker displays
 -- (Titan Panel, ChocolateBar, ...) recognise it and show its proper name.
--- Hover: today's looted bosses. Left-click: settings. Right-click: test reminder.
+-- Hover: today's looted bosses. Left-click: settings. Shift-click: boss
+-- checklist. Right-click: test reminder.
 local _, ns = ...
 
 local Minimap_ = {}
@@ -21,6 +22,35 @@ local ldb, icon, dataObject
 -- Tooltip
 ------------------------------------------------------------------------------
 
+-- What the tooltip lists under the totals (setting: DB.tooltipShows).
+ns.TOOLTIP_MODES = {
+    { key = "looted",   label = "Looted bosses" },
+    { key = "unlooted", label = "Bosses not looted yet" },
+    { key = "both",     label = "Looted and not looted" },
+}
+
+local function statusText(r)
+    local st = ns.Roster.STATUS[r.status]
+    return type(st.text) == "function" and st.text(r) or st.text, st.color
+end
+
+local function countColor(g)
+    if g.missed > 0 then return RED end
+    if g.total > 0 and g.done >= g.total then return GREEN end
+    if g.done > 0 then return { 1, 0.82, 0 } end
+    return GREY
+end
+
+local function addBossLine(tt, r)
+    local text, c = statusText(r)
+    tt:AddDoubleLine("   " .. r.display, text, c[1], c[2], c[3], c[1], c[2], c[3])
+end
+
+local function addGroupHeader(tt, g)
+    local c = countColor(g)
+    tt:AddDoubleLine(g.name, g.done .. "/" .. g.total, WHITE[1], WHITE[2], WHITE[3], c[1], c[2], c[3])
+end
+
 function ns.FillTooltip(tt)
     ns.checkDailyReset()
     local CDB, DB = ns.CDB, ns.DB
@@ -32,66 +62,79 @@ function ns.FillTooltip(tt)
     tt:AddDoubleLine("Daily reset in", ns.formatDuration((CDB.resetAt or ns.serverNow()) - ns.serverNow()),
         1, 0.82, 0, 1, 1, 1)
 
-    -- Looted today, grouped by dungeon.
-    local groups, order = {}, {}
-    for _, v in pairs(CDB.looted) do
-        local inst = v.instance or "Other"
-        if not groups[inst] then groups[inst] = {}; order[#order + 1] = inst end
-        table.insert(groups[inst], v)
-    end
-    table.sort(order)
+    local mode = DB.tooltipShows or "looted"
+    local groups = ns.Roster.Build()
+    local hereGroups = ns.Roster.GroupNamesFor(ns.currentInstance())
     tt:AddLine(" ")
-    if #order == 0 then
-        tt:AddLine("No bosses looted today yet.", GREY[1], GREY[2], GREY[3])
-    else
+
+    if mode == "looted" then
         tt:AddLine("Looted today", 1, 0.82, 0)
-        for _, inst in ipairs(order) do
-            tt:AddLine(inst, WHITE[1], WHITE[2], WHITE[3])
-            table.sort(groups[inst], function(a, b) return a.name < b.name end)
-            for _, v in ipairs(groups[inst]) do
-                if v.none then
-                    tt:AddDoubleLine("   " .. v.name, "nothing for you", GREY[1], GREY[2], GREY[3], GREY[1], GREY[2], GREY[3])
-                else
-                    tt:AddDoubleLine("   " .. v.name, (v.n and v.n > 1) and (v.n .. " Reals") or "1 Real",
-                        GREEN[1], GREEN[2], GREEN[3], GREEN[1], GREEN[2], GREEN[3])
-                end
+        local any = false
+        for _, g in ipairs(groups) do
+            local list = {}
+            for _, r in ipairs(g.rows) do
+                if r.status == "looted" or r.status == "none" then list[#list + 1] = r end
+            end
+            if #list > 0 then
+                any = true
+                addGroupHeader(tt, g)
+                for _, r in ipairs(list) do addBossLine(tt, r) end
             end
         end
-    end
+        if not any then tt:AddLine("No bosses looted today yet.", GREY[1], GREY[2], GREY[3]) end
 
-    if #CDB.pending > 0 then
-        tt:AddLine(" ")
-        tt:AddLine("Still to loot", RED[1], RED[2], RED[3])
-        for _, p in ipairs(CDB.pending) do
-            tt:AddLine("   " .. p.name .. (p.instance and ("  (" .. p.instance .. ")") or ""), RED[1], RED[2], RED[3])
+        -- Killed but not looted always matters, wherever it happened.
+        local missed = {}
+        for _, g in ipairs(groups) do
+            for _, r in ipairs(g.rows) do
+                if r.status == "waiting" or r.status == "missed" then missed[#missed + 1] = { g = g, r = r } end
+            end
         end
-    end
-
-    -- Bosses met before in this dungeon that have not given a Real today.
-    local inst = ns.currentInstance()
-    local known = inst and DB.knownBosses[inst]
-    if known and ns.isEligibleInstance() then
-        local missing = {}
-        for boss in pairs(known) do
-            if not CDB.looted[boss:lower()] then missing[#missing + 1] = boss end
-        end
-        if #missing > 0 then
-            table.sort(missing)
+        if #missed > 0 then
             tt:AddLine(" ")
-            tt:AddLine("Not looted yet in " .. inst, 1, 0.82, 0)
-            for _, boss in ipairs(missing) do tt:AddLine("   " .. boss, WHITE[1], WHITE[2], WHITE[3]) end
+            tt:AddLine("Still to loot", RED[1], RED[2], RED[3])
+            for _, m in ipairs(missed) do
+                tt:AddDoubleLine("   " .. m.r.display, m.g.name, RED[1], RED[2], RED[3], RED[1], RED[2], RED[3])
+            end
+        end
+    else
+        tt:AddLine(mode == "unlooted" and "Not looted yet today" or "Today's bosses", 1, 0.82, 0)
+        local folded = false
+        for _, g in ipairs(groups) do
+            addGroupHeader(tt, g)
+            local started = g.done > 0 or g.missed > 0 or hereGroups[g.name]
+            local complete = g.total > 0 and g.done >= g.total
+            if started and not (mode == "unlooted" and complete) then
+                for _, r in ipairs(g.rows) do
+                    local show
+                    if mode == "unlooted" then
+                        show = r.status == "todo" or r.status == "waiting" or r.status == "missed"
+                    else
+                        show = r.status ~= "low" and r.status ~= "ignored"
+                    end
+                    if show then addBossLine(tt, r) end
+                end
+            elseif not started then
+                folded = true
+            end
+        end
+        if folded then
+            tt:AddLine("Dungeons you haven't started today show only their count.", GREY[1], GREY[2], GREY[3])
         end
     end
 
     tt:AddLine(" ")
-    tt:AddLine("Left-click: settings   Right-click: test reminder", GREY[1], GREY[2], GREY[3])
+    tt:AddLine("Left-click: settings   Shift-click: boss checklist", GREY[1], GREY[2], GREY[3])
+    tt:AddLine("Right-click: test reminder", GREY[1], GREY[2], GREY[3])
 end
 
 local function onClick(mouseButton)
     if mouseButton == "RightButton" then
         ns.slash("test")
+    elseif IsShiftKeyDown and IsShiftKeyDown() then
+        ns.Options.Toggle("bosses")
     else
-        ns.Options.Toggle()
+        ns.Options.Toggle("look")
     end
 end
 

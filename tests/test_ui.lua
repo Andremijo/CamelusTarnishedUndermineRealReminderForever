@@ -87,7 +87,29 @@ check(tip:find("Blackrock Depths", 1, true) ~= nil, "tooltip groups by dungeon")
 check(tip:find("Emperor Dagran Thaurissan | 3 Reals", 1, true) ~= nil, "tooltip lists the Emperor with 3 Reals")
 check(tip:find("Magmus | 1 Real", 1, true) ~= nil, "tooltip lists Magmus")
 check(tip:find("General Angerforge", 1, true) ~= nil, "tooltip lists the boss still waiting")
-check(tip:find("Not looted yet in Blackrock Depths", 1, true) ~= nil, "tooltip lists known bosses not looted")
+check(DB.tooltipShows == "looted", "tooltip shows looted bosses by default")
+check(tip:find("Golem Lord Argelmach", 1, true) == nil, "looted mode leaves out bosses not looted yet")
+
+-- Tooltip setting: bosses not looted yet.
+DB.tooltipShows = "unlooted"
+mm.scripts.OnEnter(mm)
+tip = T.tooltipText()
+check(tip:find("Not looted yet today", 1, true) ~= nil, "unlooted mode heading")
+check(tip:find("Golem Lord Argelmach | not looted", 1, true) ~= nil, "unlooted mode lists a boss still to do here")
+check(tip:find("General Angerforge | killed - loot it!", 1, true) ~= nil, "unlooted mode lists the waiting boss")
+check(tip:find("Magmus |", 1, true) == nil, "unlooted mode leaves out looted bosses")
+check(tip:find("Dire Maul East | 0/5", 1, true) ~= nil, "dungeons not started show only their count")
+check(tip:find("Hydrospawn", 1, true) == nil, "...without listing their bosses")
+check(tip:find("Lord Roccor", 1, true) == nil, "below-55 bosses aren't listed as to do")
+
+-- Tooltip setting: both.
+DB.tooltipShows = "both"
+mm.scripts.OnEnter(mm)
+tip = T.tooltipText()
+check(tip:find("Magmus | 1 Real", 1, true) ~= nil and tip:find("Golem Lord Argelmach | not looted", 1, true) ~= nil,
+    "both mode lists looted and not looted")
+check(tip:find("Blackrock Depths | 2/9", 1, true) ~= nil, "dungeon count in the tooltip")
+DB.tooltipShows = "looted"
 mm.scripts.OnLeave(mm)
 ns.dismissAll()
 

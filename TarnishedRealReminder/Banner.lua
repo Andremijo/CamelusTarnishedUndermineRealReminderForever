@@ -130,8 +130,8 @@ local function build()
     close:SetPushedTexture("Interface\\Buttons\\UI-Panel-MinimizeButton-Down")
     close:SetHighlightTexture("Interface\\Buttons\\UI-Panel-MinimizeButton-Highlight", "ADD")
     close:SetScript("OnClick", function()
-        if ns.Options and ns.Options.IsShown() and #ns.CDB.pending == 0 then return end
-        ns.dismissAll()
+        if ns.Options and ns.Options.IsPreviewing() and #ns.pendingHere() == 0 then return end
+        ns.dismissHere()
     end)
     body.close = close
 
@@ -261,13 +261,13 @@ function Banner.Update()
     if not ns.DB then return end
     build()
     if not f.applied then return Banner.Apply() end
-    local pending = ns.CDB and ns.CDB.pending or {}
-    local preview = ns.Options and ns.Options.IsShown()
+    local pending = ns.CDB and ns.pendingHere() or {}
+    local preview = ns.Options and ns.Options.IsPreviewing()
     local n = #pending
     local active = n > 0 and (ns.isEligibleInstance() or ns.testMode)
 
     if active then
-        body.sub:SetText((n == 1 and "Waiting on: " or (n .. " bosses waiting: ")) .. ns.pendingNames())
+        body.sub:SetText((n == 1 and "Waiting on: " or (n .. " bosses waiting: ")) .. ns.pendingNames(pending))
     elseif preview then
         body.sub:SetText("Preview: Emperor Dagran Thaurissan")
     elseif not ns.DB.locked then
@@ -361,7 +361,7 @@ ns.DEFAULT_WARNING_POINT = { "TOP", "TOP", 0, -250 }
 local function WD() return ns.DB.warning end
 
 local function warningPreview()
-    return (ns.Options and ns.Options.IsShown()) or not ns.DB.locked
+    return (ns.Options and ns.Options.IsPreviewing()) or not ns.DB.locked
 end
 
 local function saveWarningPoint()

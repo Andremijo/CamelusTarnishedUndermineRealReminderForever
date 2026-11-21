@@ -2,6 +2,40 @@
 
 Each `## vX.Y.Z` section below becomes the notes of that version's GitHub Release, published automatically when the version reaches `main`.
 
+## v1.2.0
+
+**Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.
+
+### New
+- **Boss checklist.** The settings window has a new **Bosses today** tab. Open it with `/cturr bosses` or shift-click the minimap button. It lists every boss that drops a Real, grouped by dungeon, with today's status:
+  - **looted** (and how many Reals);
+  - **nothing for you**;
+  - **killed, not looted** (in red);
+  - **not looted**;
+  - **below 55**;
+  - **ignored**.
+
+  Each dungeon shows a count such as `13/13` in green when done, or in red when a Real was missed. Hover over a boss for details. Right-click a boss to ignore it if it doesn't exist in this version of the game or never drops a Real.
+- **Boss lists from Wowhead.** The lists follow Wowhead's WoW: Forever Dungeon Journal, split the way the journal splits them:
+  - Lower and Upper Blackrock Spire;
+  - Dire Maul East, West and North;
+  - Stratholme Live and Undead.
+
+  Shaper's Terrace and Blackmaw Hold come from Wowhead's Forever guides and statistics, since they have no journal page yet.
+- **Optional bosses.** Rares and summoned or quest bosses are marked *optional*. They're listed but only counted once they give you a Real.
+- **Game names.** The game sometimes reports a different name than the journal uses, for example "Kirtonos" for "Kirtonos the Herald" or "Ras Frostwhisperer" for "Ras Frostwhisper". Both tick the same row, and the row switches to the game's name. Bosses the list doesn't know are added automatically.
+- **Minimap tooltip setting.** Under Appearance > Animation and sound, "Minimap tooltip shows" picks what the tooltip lists:
+  - **Looted bosses** (as before);
+  - **Bosses not looted yet**;
+  - **Looted and not looted**.
+
+  Dungeons you haven't started today show only their count, to keep the tooltip short.
+
+### Fixed
+- A Real looted in one dungeon no longer ticks off a boss you missed in another dungeon.
+- The banner and its repeat sound only remind you of bosses in the dungeon you're in. Reals missed elsewhere show in the checklist and the tooltip instead. The banner's X only dismisses what it shows.
+- The first boss in a dungeon the addon learns about from its first Real is now recorded too.
+
 ## v1.1.2
 
 **Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.

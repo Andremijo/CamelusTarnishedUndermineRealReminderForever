@@ -305,6 +305,193 @@ local function pct(v) return string.format("%d%%", math.floor(v * 100 + 0.5)) en
 local function px(v) return string.format("%d", v) end
 local function times(v) return string.format("%.1fx", v) end
 
+------------------------------------------------------------------------------
+-- "Bosses today" tab: every Real boss by dungeon, with today's status.
+------------------------------------------------------------------------------
+
+local GROUP_COLS, ROW_H = 4, 16
+
+local function buildBossPage(parent)
+    local page = CreateFrame("Frame", nil, parent)
+    page:SetAllPoints()
+    page:Hide()
+
+    page.summary = label(page, "", "GameFontHighlight")
+    page.summary:SetPoint("TOPLEFT", 14, -58)
+    page.legend = label(page, "Hover over a boss for details. Right-click a boss to ignore it, if it doesn't exist "
+        .. "in this version of the game or never drops a Real. Optional bosses (rares, summoned and quest bosses) only "
+        .. "count once they give you a Real.", "GameFontDisableSmall")
+    page.legend:SetPoint("TOPLEFT", page.summary, "BOTTOMLEFT", 0, -4)
+
+    local sf = CreateFrame("ScrollFrame", nil, page)
+    sf:SetPoint("TOPLEFT", 12, -94)
+    sf:SetPoint("BOTTOMRIGHT", -12, 48)
+    local content = CreateFrame("Frame", nil, sf)
+    content:SetSize(GROUP_COLS * COL_W + (GROUP_COLS - 1) * 12, 10)
+    sf:SetScrollChild(content)
+    sf:EnableMouseWheel(true)
+    sf:SetScript("OnMouseWheel", function(self, delta)
+        local range = self:GetVerticalScrollRange() or 0
+        local v = (self:GetVerticalScroll() or 0) - delta * 48
+        self:SetVerticalScroll(math.max(0, math.min(range, v)))
+    end)
+    page.headers, page.rows = {}, {}
+
+    local function header(i)
+        local h = page.headers[i]
+        if not h then
+            h = CreateFrame("Frame", nil, content)
+            fill(h, "BACKGROUND", CARD)
+            outline(h, LINE)
+            h.name = label(h, "", "GameFontNormal", ACCENT)
+            h.name:SetPoint("LEFT", 8, 0)
+            h.count = label(h, "", "GameFontHighlight")
+            h.count:SetPoint("RIGHT", -8, 0)
+            page.headers[i] = h
+        end
+        return h
+    end
+
+    local function showRowTooltip(r)
+        local d = r.data
+        if not d then return end
+        local st = ns.Roster.STATUS[d.status]
+        GameTooltip:SetOwner(r, "ANCHOR_RIGHT")
+        GameTooltip:AddLine(d.display, 1, 0.82, 0)
+        local text = type(st.text) == "function" and st.text(d) or st.text
+        GameTooltip:AddLine(text, st.color[1], st.color[2], st.color[3])
+        if type(d.level) == "number" then
+            GameTooltip:AddLine("Level " .. (d.level > 0 and d.level or "??"), 1, 1, 1)
+        end
+        if #d.names > 1 then
+            local others = {}
+            for _, n in ipairs(d.names) do if n ~= d.display then others[#others + 1] = n end end
+            GameTooltip:AddLine("Also called: " .. table.concat(others, ", "), 0.7, 0.7, 0.7, true)
+        end
+        if not d.seen then
+            GameTooltip:AddLine("Not killed with the addon yet. The name comes from guides; the game's own name "
+                .. "replaces it after the first kill.", 0.7, 0.7, 0.7, true)
+        end
+        if d.status == "missed" then
+            GameTooltip:AddLine("You killed it today but its Real wasn't looted. If the corpse is still there, "
+                .. "go back and loot it.", 1, 0.35, 0.35, true)
+        end
+        GameTooltip:AddLine(d.ignored and "Right-click: stop ignoring" or "Right-click: ignore this boss", 0.6, 0.6, 0.6)
+        GameTooltip:Show()
+    end
+
+    local function row(i)
+        local r = page.rows[i]
+        if not r then
+            r = CreateFrame("Button", nil, content)
+            r:RegisterForClicks("RightButtonUp")
+            r.name = label(r, "")
+            r.name:SetPoint("LEFT", 12, 0)
+            r.status = label(r, "")
+            r.status:SetPoint("RIGHT", -8, 0)
+            local hl = r:CreateTexture(nil, "HIGHLIGHT")
+            hl:SetAllPoints()
+            hl:SetColorTexture(1, 1, 1, 0.07)
+            r:SetScript("OnClick", function(self, button)
+                if button == "RightButton" and self.data then
+                    ns.Roster.ToggleIgnore(self.data)
+                    page.Refresh()
+                    showRowTooltip(self)
+                end
+            end)
+            r:SetScript("OnEnter", showRowTooltip)
+            r:SetScript("OnLeave", function() GameTooltip:Hide() end)
+            page.rows[i] = r
+        end
+        return r
+    end
+
+    function page.Refresh()
+        local groups = ns.Roster.Build()
+        page.groups = groups
+
+        local total, done, reals, missed = 0, 0, 0, 0
+        for _, g in ipairs(groups) do
+            total, done, reals, missed = total + g.total, done + g.done, reals + g.reals, missed + g.missed
+        end
+        local reset = ns.formatDuration((ns.CDB.resetAt or ns.serverNow()) - ns.serverNow())
+        local text = string.format("Today: %d Real%s from %d of %d bosses.   Daily reset in %s.",
+            reals, reals == 1 and "" or "s", done, total, reset)
+        if missed > 0 then
+            text = text .. string.format("   |cffff5959%d killed but not looted!|r", missed)
+        end
+        page.summary:SetText(text)
+
+        for _, h in ipairs(page.headers) do h:Hide() end
+        for _, r in ipairs(page.rows) do r:Hide(); r.data = nil end
+
+        local colY = {}
+        for c = 1, GROUP_COLS do colY[c] = 0 end
+        local n = 0
+        for gi, g in ipairs(groups) do
+            local c = 1
+            for k = 2, GROUP_COLS do if colY[k] < colY[c] then c = k end end
+            local x, y = (c - 1) * (COL_W + 12), -colY[c]
+
+            local h = header(gi)
+            h:ClearAllPoints()
+            h:SetPoint("TOPLEFT", content, "TOPLEFT", x, y)
+            h:SetSize(COL_W, 22)
+            h.name:SetText(g.name)
+            h.count:SetText(g.done .. "/" .. g.total)
+            if g.missed > 0 then
+                h.count:SetTextColor(1, 0.35, 0.35)
+            elseif g.total > 0 and g.done >= g.total then
+                h.count:SetTextColor(0.25, 1, 0.25)
+            elseif g.done > 0 then
+                h.count:SetTextColor(1, 0.82, 0)
+            else
+                h.count:SetTextColor(0.8, 0.8, 0.8)
+            end
+            h:Show()
+            y = y - 24
+
+            for _, d in ipairs(g.rows) do
+                n = n + 1
+                local r = row(n)
+                r.data = d
+                r:ClearAllPoints()
+                r:SetPoint("TOPLEFT", content, "TOPLEFT", x, y)
+                r:SetSize(COL_W, ROW_H)
+                local st = ns.Roster.STATUS[d.status]
+                r.name:SetText(d.display)
+                local dim = (d.status == "low" or d.status == "ignored" or d.status == "optional")
+                if dim then
+                    r.name:SetTextColor(st.color[1], st.color[2], st.color[3])
+                elseif d.status == "looted" or d.status == "none" or d.status == "waiting" or d.status == "missed" then
+                    r.name:SetTextColor(st.color[1], st.color[2], st.color[3])
+                elseif d.seen then
+                    r.name:SetTextColor(1, 1, 1)
+                else
+                    r.name:SetTextColor(0.78, 0.78, 0.78)
+                end
+                r.status:SetText(type(st.text) == "function" and st.text(d) or st.text)
+                r.status:SetTextColor(st.color[1], st.color[2], st.color[3])
+                r:Show()
+                y = y - ROW_H
+            end
+            colY[c] = -y + 10
+        end
+        local height = 10
+        for c = 1, GROUP_COLS do height = math.max(height, colY[c]) end
+        content:SetHeight(height)
+    end
+
+    -- Keep it current while open (kills, loot, the daily reset).
+    page.elapsed = 0
+    page:SetScript("OnUpdate", function(self, dt)
+        self.elapsed = self.elapsed + (dt or 0)
+        if self.elapsed >= 1 then self.elapsed = 0; self.Refresh() end
+    end)
+    page:SetScript("OnShow", function(self) self.elapsed = 0; self.Refresh() end)
+    return page
+end
+
 local function build()
     win = CreateFrame("Frame", "TarnishedRealReminderOptions", UIParent)
     win:SetSize(4 * COL_W + 5 * 12, 700)
@@ -329,8 +516,46 @@ local function build()
     local close = flatButton(win, "X", 22, 22, function() win:Hide() end)
     close:SetPoint("TOPRIGHT", -10, -10)
 
+    -- Two pages: the look of the reminder, and today's boss checklist.
+    local look = CreateFrame("Frame", nil, win)
+    look:SetAllPoints()
+    local bosses = buildBossPage(win)
+    Options.bossPage = bosses
+    local tabs = {}
+    local function tab(text, key)
+        local b = flatButton(win, text, 120, 22, function() Options.ShowTab(key) end)
+        b.underline = b:CreateTexture(nil, "OVERLAY")
+        b.underline:SetColorTexture(ACCENT[1], ACCENT[2], ACCENT[3], 1)
+        b.underline:SetPoint("BOTTOMLEFT", 1, 1)
+        b.underline:SetPoint("BOTTOMRIGHT", -1, 1)
+        b.underline:SetHeight(2)
+        tabs[key] = b
+        return b
+    end
+    local tabBosses = tab("Bosses today", "bosses")
+    tabBosses:SetPoint("RIGHT", close, "LEFT", -12, 0)
+    local tabLook = tab("Appearance", "look")
+    tabLook:SetPoint("RIGHT", tabBosses, "LEFT", -6, 0)
+
+    function Options.ShowTab(key)
+        Options.currentTab = key
+        look:SetShown(key == "look")
+        bosses:SetShown(key == "bosses")
+        for k, b in pairs(tabs) do
+            b.underline:SetShown(k == key)
+            if k == key then b.label:SetTextColor(ACCENT[1], ACCENT[2], ACCENT[3]) else b.label:SetTextColor(1, 1, 1) end
+        end
+        if key == "bosses" then
+            sub:SetText("Every boss that drops a Real, by dungeon, and what you've looted today.")
+        else
+            sub:SetText("Changes apply right away. The banner stays up as a preview while this tab is open.")
+        end
+        if win.resetLook then win.resetLook:SetShown(key == "look") end
+        if ns.Banner then ns.Banner.Update() end
+    end
+
     -- Column 1: the banner itself.
-    local c1 = column(win, "Banner", 12)
+    local c1 = column(look, "Banner", 12)
     slider(c1, "Width", 150, 1000, 5, function() return D().width end, function(v) D().width = v end, px)
     slider(c1, "Height", 30, 400, 1, function() return D().height end, function(v) D().height = v end, px)
     slider(c1, "Scale", 0.5, 2.5, 0.05, function() return D().scale end, function(v) D().scale = v end, times)
@@ -351,7 +576,7 @@ local function build()
     slider(c1, "Border size", 1, 40, 1, function() return D().borderSize end, function(v) D().borderSize = v end, px)
 
     -- Column 2: text and icon.
-    local c2 = column(win, "Text and icon", 12 * 2 + COL_W)
+    local c2 = column(look, "Text and icon", 12 * 2 + COL_W)
     editBox(c2, "Title text", function() return D().titleText end, function(v) D().titleText = v end)
     selector(c2, "Font", ns.FONTS, function() return D().font end, function(v) D().font = v end)
     selector(c2, "Font outline", ns.OUTLINES, function() return D().outline end, function(v) D().outline = v end)
@@ -367,7 +592,7 @@ local function build()
     checkbox(c2, "Show the close button", function() return D().showClose end, function(v) D().showClose = v end)
 
     -- Column 3: motion and sound.
-    local c3 = column(win, "Animation and sound", 12 * 3 + COL_W * 2)
+    local c3 = column(look, "Animation and sound", 12 * 3 + COL_W * 2)
     selector(c3, "Animation", ns.ANIMATIONS, function() return D().animation end, function(v) D().animation = v end)
     slider(c3, "Animation speed", 0.2, 3, 0.1, function() return D().animSpeed end, function(v) D().animSpeed = v end, times)
     selector(c3, "Entrance", ns.INTROS, function() return D().intro end, function(v) D().intro = v end)
@@ -391,6 +616,8 @@ local function build()
         ns.DB.minimap.hide = not v
         if ns.Minimap then ns.Minimap.Refresh() end
     end)
+    selector(c3, "Minimap tooltip shows", ns.TOOLTIP_MODES, function() return ns.DB.tooltipShows end,
+        function(v) ns.DB.tooltipShows = v end)
 
     -- Column 4: the big warning text.
     local function W() return ns.DB.warning end
@@ -401,7 +628,7 @@ local function build()
         W().point[i] = v
     end
     local function applyWarning() if ns.Banner then ns.Banner.ApplyWarning() end end
-    local c4 = column(win, "Warning text", 12 * 4 + COL_W * 3)
+    local c4 = column(look, "Warning text", 12 * 4 + COL_W * 3)
     local note = label(c4, "Big text that names the boss. It sits under the banner by default. Untick Lock (Banner column) to drag it.",
         "GameFontDisableSmall")
     note:SetWordWrap(true)
@@ -440,10 +667,12 @@ local function build()
         apply()
     end)
     reset:SetPoint("LEFT", test, "RIGHT", 8, 0)
+    win.resetLook = reset
     local done = flatButton(win, "Close", 90, 24, function() win:Hide() end)
     done:SetPoint("BOTTOMRIGHT", -12, 12)
 
     win:SetScript("OnShow", function() Options.Refresh(); apply() end)
+    Options.ShowTab("look")
     win:SetScript("OnHide", function() if ns.Banner then ns.Banner.Update() end end)
     win:Hide()
 end
@@ -457,14 +686,25 @@ function Options.IsShown()
     return win ~= nil and win:IsShown()
 end
 
-function Options.Show()
-    if not win then build() end
-    win:Show()
+-- The banner and warning preview only while the Appearance tab is showing.
+function Options.IsPreviewing()
+    return Options.IsShown() and Options.currentTab ~= "bosses"
 end
 
-function Options.Toggle()
+-- tab: "look" (default) or "bosses".
+function Options.Show(tab)
     if not win then build() end
-    if win:IsShown() then win:Hide() else win:Show() end
+    win:Show()
+    Options.ShowTab(tab or Options.currentTab or "look")
+end
+
+function Options.Toggle(tab)
+    if not win then build() end
+    if win:IsShown() and (not tab or tab == Options.currentTab) then
+        win:Hide()
+    else
+        Options.Show(tab)
+    end
 end
 
 -- An entry under Options > AddOns that opens this window.
