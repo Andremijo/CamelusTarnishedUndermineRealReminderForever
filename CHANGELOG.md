@@ -2,6 +2,13 @@
 
 Each `## vX.Y.Z` section below becomes the notes of that version's GitHub Release, published automatically when the version reaches `main`.
 
+## v1.2.5
+
+**Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.
+
+### Fixed
+- **The Vault no longer reminds you.** The game reports the fight with Warder Stilgiss & Verek in Blackrock Depths under the name "The Vault", which the addon didn't recognise. It drops no Real (confirmed in game). "The Vault" is now known as the same fight: no reminder, and in the checklist it ticks the existing Stilgiss & Verek row as "drops no Real".
+
 ## v1.2.4
 
 **Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.

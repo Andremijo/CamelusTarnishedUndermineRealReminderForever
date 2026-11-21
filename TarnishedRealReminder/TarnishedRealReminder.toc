@@ -2,7 +2,7 @@
 ## Title: Camelus' Tarnished Undermine Real Reminder
 ## Notes: Reminds you to loot the Tarnished Undermine Real from every boss that drops one today (WoW: Forever).
 ## Author: Camelus
-## Version: 1.2.4
+## Version: 1.2.5
 ## IconTexture: Interface\Icons\INV_Misc_Coin_17
 ## SavedVariables: TarnishedRealReminderDB
 ## SavedVariablesPerCharacter: TarnishedRealReminderCharDB
