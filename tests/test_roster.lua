@@ -82,10 +82,10 @@ local scholo = group("Scholomance")
 check(#scholo.rows == 15 and scholo.total == 13 and scholo.done == 0, "Scholomance: 15 journal bosses, 13 counted, none done")
 check(rowOf(scholo, "Kormok").status == "optional", "summoned boss shown as optional")
 local brd = group("Blackrock Depths")
-check(#brd.rows == 18, "BRD: Wowhead's 18 journal entries")
+check(#brd.rows == 19, "BRD: Wowhead's 18 journal entries plus Ribbly, whom the game reports as a boss")
 check(rowOf(brd, "Lord Roccor").status == "low", "Lord Roccor (51) shown as below 55")
 check(brd.total == 10, "BRD counts level 55+ bosses plus Darkvire (54, confirmed Real) (" .. brd.total .. ")")
-check(rowOf(brd, "Ribbly Screwspigot") == nil, "Ribbly isn't a Forever journal boss")
+check(rowOf(brd, "Ribbly Screwspigot").status == "low", "Ribbly listed as dropping no Real")
 
 -- The run from the screenshot: all 13 Scholomance bosses, with the game's names.
 enter("Scholomance", 289)

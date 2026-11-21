@@ -84,6 +84,13 @@ check(r.status == "low" and ns.Roster.STATUS.low.text(r) == "drops no Real", "ch
 r = row("Blackrock Depths", "Phalanx")
 check(r.level == 55 and r.status == "todo", "Phalanx (55) counts")
 
+-- Ribbly Screwspigot (53): reported as a boss in game, confirmed no Real.
+kill("Ribbly Screwspigot", SECRET)
+kill("Ribbly Screwspigot", nil, false)
+check(#CDB.pending == 0, "Ribbly never reminds (confirmed no Real)")
+r = row("Blackrock Depths", "Ribbly Screwspigot")
+check(r and r.status == "low" and ns.Roster.STATUS.low.text(r) == "drops no Real", "checklist: Ribbly drops no Real")
+
 -- High Interrogator Gerstahn and Lord Roccor: confirmed in game, no Real,
 -- whatever level is read (even a wrong 58).
 kill("High Interrogator Gerstahn", 58)

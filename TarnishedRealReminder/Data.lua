@@ -108,6 +108,9 @@ ns.ROSTER = {
             -- Level 56/55, but players report no Real from it.
             { "Warder Stilgiss & Verek", aliases = { "Warder Stilgiss", "Verek" }, optional = true, noReal = true },
             { "Panzor the Invincible", optional = true },
+            -- Not in Wowhead's journal, but the game reports him as a boss.
+            -- Level 53, confirmed in game: no Real.
+            { "Ribbly Screwspigot", optional = true, noReal = true },
         },
     },
     {
@@ -318,6 +321,7 @@ levels({
     ["Warder Stilgiss"] = 56,
     ["Verek"] = 55,
     ["Panzor the Invincible"] = 57,
+    ["Ribbly Screwspigot"] = 53,
     -- Chest of the Seven
     ["Doom'rel"] = 57, ["Gloom'rel"] = 56, ["Seeth'rel"] = 56, ["Vile'rel"] = 56, ["Dope'rel"] = 56,
     ["Anger'rel"] = 55, ["Hate'rel"] = 55,
