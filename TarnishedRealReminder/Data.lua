@@ -66,6 +66,8 @@ ns.ELIGIBLE_INSTANCE_NAMES = {
 --             and the row then shows the game's name.
 --   optional  rares, summoned and quest bosses: listed, but only counted
 --             once you get a Real from them.
+--   noReal    confirmed in game not to drop a Real even though it is level
+--             55+; never reminds, whatever level the addon reads.
 --   variable  the boss you fight changes from run to run (Ring of the Law
 --             picks one challenger; some are level 55+, some aren't). Its
 --             eligibility comes from the challenger seen in the fight, and the
@@ -100,7 +102,8 @@ ns.ROSTER = {
             { "Chest of the Seven", aliases = { "The Seven", "Doom'rel" } },
             { "Magmus" },
             { "Emperor Dagran Thaurissan", aliases = { "Princess Moira Bronzebeard" } },
-            { "Warder Stilgiss & Verek", aliases = { "Warder Stilgiss", "Verek" }, optional = true },
+            -- Level 56/55, but players report no Real from it.
+            { "Warder Stilgiss & Verek", aliases = { "Warder Stilgiss", "Verek" }, optional = true, noReal = true },
             { "Panzor the Invincible", optional = true },
         },
     },
@@ -249,6 +252,17 @@ ns.ROSTER = {
         },
     },
 }
+
+-- Bosses known not to drop a Real (noReal in the list), by every name.
+ns.NO_REAL_BOSSES = {}
+for _, def in ipairs(ns.ROSTER) do
+    for _, b in ipairs(def.bosses) do
+        if b.noReal then
+            ns.NO_REAL_BOSSES[b[1]:lower()] = true
+            for _, a in ipairs(b.aliases or {}) do ns.NO_REAL_BOSSES[a:lower()] = true end
+        end
+    end
+end
 
 -- Boss names used only as a fallback when the game does not report a kill
 -- through ENCOUNTER_END: if one of these is seen dead (target, focus,

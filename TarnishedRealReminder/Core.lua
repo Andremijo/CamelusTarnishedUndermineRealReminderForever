@@ -358,16 +358,28 @@ ns.alert = alert
 ------------------------------------------------------------------------------
 
 -- Does this boss drop a Real? Decided by, in order:
---   1. the level read in game, when it could be read (a real level, not "??");
---   2. Wowhead's level (ns.BOSS_LEVELS) of the units seen in the fight. For
+--   0. bosses confirmed not to drop one (Data.lua noReal, e.g. Warder
+--      Stilgiss) never do;
+--   1. learned: its own corpse had no Real for you on a day you hadn't looted
+--      it. That is direct evidence, so it beats any level (Stilgiss is level
+--      56 and still drops none). Never used for a variable encounter like Ring
+--      of the Law, and undone as soon as the boss does give a Real;
+--   2. the level read in game, when it could be read (a real level, not "??");
+--   3. Wowhead's level (ns.BOSS_LEVELS) of the units seen in the fight. For
 --      Ring of the Law that is the challenger who showed up this time;
---   3. Wowhead's level for the boss itself;
---   4. learned: its corpse had no Real for you on a day you hadn't looted it
---      (never for a variable encounter like Ring of the Law);
+--   4. Wowhead's level for the boss itself;
 --   5. otherwise yes, so a Real is never missed.
 -- In dungeons this client often keeps unit levels secret from addons, which
--- is why 2-4 exist. Returns eligible, and a reason for the debug output.
+-- is why 3-4 exist. Returns eligible, and a reason for the debug output.
 local function bossEligible(name, level, instanceName, seenNames)
+    if name and ns.NO_REAL_BOSSES[name:lower()] then
+        return false, "known not to drop a Real"
+    end
+    local inst = instanceName or currentInstance()
+    local variable = ns.Roster and ns.Roster.IsVariable and ns.Roster.IsVariable(name, inst)
+    if not variable and name and DB.noRealBosses[name:lower()] then
+        return false, "its corpse had no Real before (learned)"
+    end
     if type(level) == "number" and level > 0 then
         return level >= ns.MIN_BOSS_LEVEL, "level " .. level
     end
@@ -379,13 +391,9 @@ local function bossEligible(name, level, instanceName, seenNames)
         end
         if best then return best >= ns.MIN_BOSS_LEVEL, "fought a level " .. best .. " boss" end
     end
-    local inst = instanceName or currentInstance()
-    local listed, variable = nil, false
-    if ns.Roster and ns.Roster.ListedLevel then listed, variable = ns.Roster.ListedLevel(name, inst) end
+    local listed
+    if ns.Roster and ns.Roster.ListedLevel then listed = ns.Roster.ListedLevel(name, inst) end
     if listed then return listed >= ns.MIN_BOSS_LEVEL, "level " .. listed .. " (Wowhead)" end
-    if not variable and name and DB.noRealBosses[name:lower()] then
-        return false, "its corpse had no Real before (learned)"
-    end
     return true, variable and "challenger unknown" or "level unknown"
 end
 ns.bossEligible = bossEligible
@@ -499,6 +507,7 @@ local function creditUnexpectedReal(delta)
     end
     if name then
         CDB.looted[name:lower()] = { name = name, t = serverNow(), n = delta, instance = here }
+        DB.noRealBosses[name:lower()] = nil -- it gave a Real: undo any "no Real" learning
         if isEligibleInstance() then rememberBoss(name) end
     end
     return name

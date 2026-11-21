@@ -82,6 +82,19 @@ check(r.status == "low" and ns.Roster.STATUS.low.text(r) == "level 52, no Real",
 r = row("Blackrock Depths", "Phalanx")
 check(r.level == 55 and r.status == "todo", "Phalanx (55) counts")
 
+-- Warder Stilgiss is level 56 but drops no Real (reported in game).
+kill("Warder Stilgiss", 56)
+check(#CDB.pending == 0, "Warder Stilgiss, level 56 read: no reminder (drops no Real)")
+kill("Warder Stilgiss & Verek", SECRET)
+check(#CDB.pending == 0, "Warder Stilgiss & Verek, level hidden: no reminder")
+kill("Verek", nil, false)
+check(#CDB.pending == 0, "Verek: no reminder")
+r = row("Blackrock Depths", "Warder Stilgiss & Verek")
+check(r.status == "low" and ns.Roster.STATUS.low.text(r) == "drops no Real", "checklist: drops no Real")
+table.insert(CDB.pending, { key = "warder stilgiss", name = "Warder Stilgiss", t = 0, instance = "Blackrock Depths", guids = {} })
+T.fire("PLAYER_ENTERING_WORLD"); T.advance(3.5)
+check(#CDB.pending == 0, "a waiting Stilgiss reminder is dropped at the loading screen")
+
 -- Ring of the Law: the challenger who shows up decides.
 kill("Ring of the Law", SECRET, "Grizzle")
 check(#CDB.pending == 0, "Ring of the Law vs Grizzle (54): no reminder")
@@ -127,11 +140,30 @@ r = row("Blackmaw Hold", "Withermaw")
 check(r.status == "low" and ns.Roster.STATUS.low.text(r) == "no Real (learned)", "checklist: no Real (learned)")
 check(total("Blackmaw Hold") == 6, "learned boss left out of the count (" .. tostring(total("Blackmaw Hold")) .. ")")
 
--- A level read in game still wins, and a Real from it unlearns it.
+-- What was learned from the corpse beats a level read in game (Warder
+-- Stilgiss is level 56 and drops no Real)...
 local g2 = kill("Withermaw", 59)
-check(#CDB.pending == 1, "readable level 59 reminds despite the learning")
+check(#CDB.pending == 0, "learned no-Real beats a readable level 59")
+r = row("Blackmaw Hold", "Withermaw")
+check(r.status == "low" and ns.Roster.STATUS.low.text(r) == "no Real (learned)", "checklist still: no Real (learned)")
+-- ...but the moment it does give a Real, the learning is undone.
 openCorpse(g2, { { name = REAL, id = REAL_ID } })
-check(DB.noRealBosses["withermaw"] == nil, "looting a Real from it unlearns it")
+check(DB.noRealBosses["withermaw"] == nil, "looting a Real from it unlearns it, even without a reminder")
+check(CDB.looted["withermaw"] and not CDB.looted["withermaw"].none, "and that Real is recorded")
+nextDay()
+kill("Withermaw", 59)
+check(#CDB.pending == 1, "after unlearning it reminds again")
+ns.dismissAll()
+
+-- A level-56 boss whose corpse has no Real is learned and stays quiet,
+-- even with its level readable.
+enter("Blackmaw Hold", 99902)
+local g3 = kill("Elder Shaman Bloodmane", 56)
+check(#CDB.pending == 1, "level 56 boss reminds the first time")
+openCorpse(g3, { { name = "Totem of Something", quality = 3 } })
+nextDay()
+kill("Elder Shaman Bloodmane", 56)
+check(#CDB.pending == 0, "level 56 boss learned as no-Real stays quiet")
 
 -- /trr relearn.
 DB.noRealBosses["varrox bleakhoof"] = "Varrox Bleakhoof"

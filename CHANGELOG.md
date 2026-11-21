@@ -2,6 +2,14 @@
 
 Each `## vX.Y.Z` section below becomes the notes of that version's GitHub Release, published automatically when the version reaches `main`.
 
+## v1.2.2
+
+**Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.
+
+### Fixed
+- **Warder Stilgiss & Verek no longer remind you.** Stilgiss is level 56, both on Wowhead and in game, but players report he drops no Real. He's now marked as dropping no Real, and the checklist shows "drops no Real". A reminder still waiting for him disappears at the next loading screen.
+- **Learning beats level.** When the addon learns from a boss's own corpse that it drops no Real, that now wins over the boss's level, even a level it can read in game. So other level 55+ bosses like Stilgiss stop reminding after the first time. If such a boss does give you a Real later, the learning is undone right away. Ring of the Law is still never learned, and `/trr relearn` still forgets everything learned.
+
 ## v1.2.1
 
 **Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.
