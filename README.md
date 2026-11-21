@@ -5,7 +5,7 @@ once per boss per day.
 
 **Download:** get the zip from the latest [GitHub Release](../../releases/latest). The same zips are also kept in [`releases/`](releases/), each with its version in the name.
 
-**Making a release:** bump `## Version` in the `.toc`, add a `## vX.Y.Z` section to `CHANGELOG.md`, run `tools/build_zip.sh`, commit, then push a tag such as `v1.2.0`. The Release workflow runs the tests and publishes the GitHub Release with the zip and the changelog section as its notes.
+**Making a release:** bump `## Version` in the `.toc`, add a `## vX.Y.Z` section to `CHANGELOG.md`, run `tools/build_zip.sh`, commit, and merge to `main`. The Release workflow sees the new version, runs the tests, and publishes the GitHub Release (tag `vX.Y.Z`) with the zip and that changelog section as its notes. A version that's already released is skipped.
 
 When an eligible boss dies, you get a pulsing banner, a raid-warning sound and the boss's name.
 The reminder stays up until the Real is in your bags. It repeats every 20 seconds when you're out of combat.

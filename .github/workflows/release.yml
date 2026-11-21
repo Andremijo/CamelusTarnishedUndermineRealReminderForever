@@ -1,17 +1,28 @@
-# Publishes a GitHub Release when a version tag (v1.2.3) is pushed.
+# Publishes a GitHub Release for the addon version on main.
 #
-# 1. Bump "## Version" in TarnishedRealReminder/TarnishedRealReminder.toc
-# 2. Add a "## v1.2.3" section to CHANGELOG.md
-# 3. Run tools/build_zip.sh and commit the zip in releases/
-# 4. Push the tag:  git tag v1.2.3 && git push origin v1.2.3
+# Runs on every push to main (and by hand from the Actions tab). If there is
+# no release yet for the "## Version" in the .toc, it runs the tests, then
+# creates the tag vX.Y.Z and a release with the zip and the matching
+# CHANGELOG.md section. If that version is already released, it does nothing.
+#
+# To release a new version:
+#   1. Bump "## Version" in TarnishedRealReminder/TarnishedRealReminder.toc
+#   2. Add a "## vX.Y.Z" section to CHANGELOG.md
+#   3. Run tools/build_zip.sh and commit the zip in releases/
+#   4. Merge to main
 name: Release
 
 on:
   push:
-    tags: ["v*"]
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   release:
@@ -19,28 +30,39 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check the tag matches the addon version
+      - name: Read the addon version
         id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          tag="${GITHUB_REF_NAME}"
           version=$(sed -n 's/^## Version: *//p' TarnishedRealReminder/TarnishedRealReminder.toc | tr -d '\r')
-          if [ "v${version}" != "${tag}" ]; then
-            echo "Tag ${tag} does not match ## Version ${version} in the .toc" >&2
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Bad ## Version in the .toc: '$version'" >&2
             exit 1
           fi
           echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${version}" >> "$GITHUB_OUTPUT"
+          if gh release view "v${version}" >/dev/null 2>&1; then
+            echo "v${version} is already released; nothing to do."
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - uses: actions/setup-python@v5
+        if: steps.version.outputs.exists == 'false'
         with:
           python-version: "3.12"
 
       - name: Run the tests
+        if: steps.version.outputs.exists == 'false'
         run: |
           pip install lupa
           python3 tests/run_tests.py
 
       - name: Find or build the zip
         id: zip
+        if: steps.version.outputs.exists == 'false'
         run: |
           name="Camelus' Tarnished Undermine Real Reminder v${{ steps.version.outputs.version }}.zip"
           if [ ! -f "releases/${name}" ]; then
@@ -50,6 +72,7 @@ jobs:
           echo "name=${name}" >> "$GITHUB_OUTPUT"
 
       - name: Release notes from CHANGELOG.md
+        if: steps.version.outputs.exists == 'false'
         run: |
           awk -v want="## v${{ steps.version.outputs.version }}" '
             $0 == want { on = 1; next }
@@ -61,11 +84,13 @@ jobs:
           fi
 
       - name: Publish the release
+        if: steps.version.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" \
+          gh release create "${{ steps.version.outputs.tag }}" \
             "${{ steps.zip.outputs.path }}#${{ steps.zip.outputs.name }}" \
-            --title "Camelus' Tarnished Undermine Real Reminder ${GITHUB_REF_NAME}" \
+            --target "${GITHUB_SHA}" \
+            --title "Camelus' Tarnished Undermine Real Reminder ${{ steps.version.outputs.tag }}" \
             --notes-file notes.md \
             --latest

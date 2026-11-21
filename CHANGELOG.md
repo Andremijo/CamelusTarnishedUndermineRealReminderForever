@@ -1,6 +1,6 @@
 # Changelog
 
-Each `## vX.Y.Z` section below is used as the notes of the matching GitHub Release.
+Each `## vX.Y.Z` section below becomes the notes of that version's GitHub Release, published automatically when the version reaches `main`.
 
 ## v1.1.0
 
