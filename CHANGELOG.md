@@ -2,6 +2,13 @@
 
 Each `## vX.Y.Z` section below becomes the notes of that version's GitHub Release, published automatically when the version reaches `main`.
 
+## v1.2.3
+
+**Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.
+
+### Fixed
+- **Ribbly Screwspigot and Plugger Spazzring no longer remind you.** Neither is in Wowhead's Forever dungeon journal, but the game reports both as bosses. Ribbly is level 53 and Plugger level 55, and both are confirmed in game to drop no Real. They're now in the Blackrock Depths list as optional, and the checklist shows "drops no Real".
+
 ## v1.2.2
 
 **Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.
