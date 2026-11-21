@@ -118,6 +118,19 @@ function Roster.GroupNamesFor(instanceName)
     return names
 end
 
+-- Does the boss list say this boss is below level 55 (no Real)? true / false
+-- when the boss is listed for that dungeon, nil when it isn't.
+function Roster.IsListedLow(bossName, instanceName)
+    for _, i in ipairs(defIndexesFor(instanceName)) do
+        for _, b in ipairs(ns.ROSTER[i].bosses) do
+            local hit = Roster.Match(b[1], bossName)
+            for _, a in ipairs(b.aliases or {}) do hit = hit or Roster.Match(a, bossName) end
+            if hit then return b.low and true or false end
+        end
+    end
+    return nil
+end
+
 -- Key under which a row's "ignored" choice is saved.
 function Roster.IgnoreKey(row) return norm(row.names[1]) end
 

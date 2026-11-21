@@ -2,6 +2,17 @@
 
 Each `## vX.Y.Z` section below becomes the notes of that version's GitHub Release, published automatically when the version reaches `main`.
 
+## v1.2.1
+
+**Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.
+
+### Fixed
+- **No more reminders for bosses below level 55**, such as High Interrogator Gerstahn (52) in Blackrock Depths. In dungeons the game often won't tell addons a boss's level. The addon then reminded you to be safe, even for bosses its own list marks as below 55. It now uses the list in that case:
+  - **Below 55 in Blackrock Depths:** Gerstahn, Lord Roccor, Houndmaster Grebmar, Fineous Darkvire, Pyromancer Loregrain, Bael'gar and Lord Incendius.
+  - **Level read in game:** when the addon can read a boss's level, that still decides.
+  - **Unknown bosses** whose level can't be read still get a reminder, so a Real is never missed.
+- A waiting reminder left over for such a boss disappears at the next loading screen.
+
 ## v1.2.0
 
 **Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.

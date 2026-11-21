@@ -356,10 +356,23 @@ ns.alert = alert
 -- Kills and pending Reals
 ------------------------------------------------------------------------------
 
-local function levelOK(level)
-    if type(level) ~= "number" or level <= 0 then return true end -- unknown or skull: assume yes
-    return level >= ns.MIN_BOSS_LEVEL
+-- Does this boss drop a Real? Decided by, in order:
+--   1. the level read in game, when it could be read (a real level, not "??");
+--   2. the boss list's "below 55" flag (Data.lua), because in dungeons this
+--      client often keeps unit levels secret from addons;
+--   3. otherwise yes, so a Real is never missed.
+-- Returns eligible, and a reason for the debug output.
+local function bossEligible(name, level, instanceName)
+    if type(level) == "number" and level > 0 then
+        return level >= ns.MIN_BOSS_LEVEL, "level " .. level
+    end
+    if ns.Roster and ns.Roster.IsListedLow
+        and ns.Roster.IsListedLow(name, instanceName or currentInstance()) then
+        return false, "listed below level " .. ns.MIN_BOSS_LEVEL
+    end
+    return true, "level unknown"
 end
+ns.bossEligible = bossEligible
 
 local function bossLevel(name)
     local lname = lower(name)
@@ -387,9 +400,12 @@ local function registerKill(name, level, source, guids, force)
         debug(name .. " killed outside a Real dungeon.")
         return
     end
-    if not force and not levelOK(level) then
-        debug(string.format("%s is level %d, below %d: no Real.", name, level, ns.MIN_BOSS_LEVEL))
-        return
+    if not force then
+        local ok, why = bossEligible(name, level)
+        if not ok then
+            debug(string.format("%s: %s, below %d, so no Real.", name, why, ns.MIN_BOSS_LEVEL))
+            return
+        end
     end
     local key = name:lower()
     if CDB.looted[key] and not force then
@@ -828,9 +844,22 @@ handlers.ADDON_LOADED = function(name)
     if ns.Options then pcall(ns.Options.RegisterWithSettings) end
 end
 
+-- Drop waiting reminders for bosses now known to be below 55 (for example
+-- one made by an older version of the addon).
+local function dropIneligiblePending()
+    for i = #CDB.pending, 1, -1 do
+        local p = CDB.pending[i]
+        if not p.test and not bossEligible(p.name, bossLevel(p.name), p.instance) then
+            table.remove(CDB.pending, i)
+        end
+    end
+end
+ns.dropIneligiblePending = dropIneligiblePending
+
 handlers.PLAYER_ENTERING_WORLD = function()
     if not DB then initDB() end
     checkDailyReset()
+    dropIneligiblePending()
     onZoneChanged()
     C_Timer.After(3, function() state.realCount = countReals() end)
 end

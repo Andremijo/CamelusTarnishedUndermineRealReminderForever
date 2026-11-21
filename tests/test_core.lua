@@ -82,6 +82,29 @@ enter("Blackrock Depths", 230)
 killBoss("Lord Roccor", 51, "G-roccor")
 check(pending() == 0, "level 51 boss gives no reminder")
 
+-- 2b. The level can't be read (secret in dungeons, or no boss frame): the
+--     boss list's "below 55" decides. Reported: High Interrogator Gerstahn (52).
+killBoss("High Interrogator Gerstahn", SECRET, "G-gerstahn")
+check(pending() == 0, "Gerstahn with a secret level gives no reminder")
+killBoss("High Interrogator Gerstahn", nil, "G-gerstahn2")
+check(pending() == 0, "Gerstahn with no level gives no reminder")
+killBoss("High Interrogator Gerstahn", -1, "G-gerstahn3")
+check(pending() == 0, "Gerstahn shown as ?? gives no reminder")
+killBoss("Mystery Boss", nil, "G-mystery")
+check(pending() == 1, "an unlisted boss with an unknown level still reminds (never miss a Real)")
+ns.dismissAll(); ns.CDB.looted["mystery boss"] = nil
+
+-- 2c. A reminder left over from an older version for a below-55 boss is
+--     dropped at the next loading screen.
+table.insert(ns.CDB.pending, { key = "high interrogator gerstahn", name = "High Interrogator Gerstahn",
+                               t = 0, instance = "Blackrock Depths", guids = {} })
+table.insert(ns.CDB.pending, { key = "magmus", name = "Magmus", t = 0, instance = "Blackrock Depths", guids = {} })
+T.fire("PLAYER_ENTERING_WORLD")
+T.advance(3.5)
+check(pending() == 1 and ns.CDB.pending[1].name == "Magmus", "stale below-55 reminder dropped, real one kept")
+check(ns.CDB.looted["high interrogator gerstahn"] == nil, "dropped reminder isn't recorded as looted")
+ns.dismissAll(); ns.CDB.looted["magmus"] = nil
+
 -- 3a. A kill shows the banner, plays a sound and shows the addon's own
 --     warning text under the banner; the game's RaidWarningFrame (which sat
 --     on top of the banner) is never used.
