@@ -2,6 +2,13 @@
 
 Each `## vX.Y.Z` section below becomes the notes of that version's GitHub Release, published automatically when the version reaches `main`.
 
+## v1.3.1
+
+**Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.
+
+### Fixed
+- **The Dire Maul North guards no longer remind you.** Guard Mol'dar, Stomper Kreeg, Guard Fengus, Guard Slip'kik and Captain Kromcrush are all confirmed in game to drop no Real. The checklist shows them as "drops no Real". King Gordok, who is on the drop list, still reminds you.
+
 ## v1.3.0
 
 **Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.

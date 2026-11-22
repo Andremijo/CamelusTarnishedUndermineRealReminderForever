@@ -148,6 +148,24 @@ r = row("Stratholme Live", "Crimson Hammersmith")
 check(r and r.status == "low" and ns.Roster.STATUS.low.text(r) == "drops no Real", "checklist: Crimson Hammersmith drops no Real")
 enter("Blackrock Depths", 230)
 
+-- Dire Maul North guards: all confirmed in game, no Real.
+enter("Dire Maul", 429)
+kill("Guard Mol'dar", 59)
+kill("Stomper Kreeg", 59)
+kill("Guard Fengus", SECRET)
+kill("Guard Slip'kik", 59)
+kill("Captain Kromcrush", 61)
+check(#CDB.pending == 0, "Dire Maul North guards: no reminders")
+for _, guard in ipairs({ "Guard Mol'dar", "Stomper Kreeg", "Guard Fengus", "Guard Slip'kik", "Captain Kromcrush" }) do
+    r = row("Dire Maul North", guard)
+    check(r and r.status == "low" and ns.Roster.STATUS.low.text(r) == "drops no Real", "checklist: " .. guard .. " drops no Real")
+end
+kill("King Gordok", 62)
+check(#CDB.pending == 1, "King Gordok (on the drop list) still reminds")
+ns.dismissAll()
+CDB.looted = {}
+enter("Blackrock Depths", 230)
+
 -- High Interrogator Gerstahn and Lord Roccor: confirmed in game, no Real,
 -- whatever level is read (even a wrong 58).
 kill("High Interrogator Gerstahn", 58)

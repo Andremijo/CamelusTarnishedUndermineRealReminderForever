@@ -186,7 +186,7 @@ function Roster.DropListVerdict(bossName, instanceName)
     if not Roster.DropListCovers(instanceName) then return nil end
     if Roster.OnDropList(bossName, instanceName) then return "yes" end
     local b = listedBoss(bossName, instanceName)
-    if not b or b.optional then return "no" end
+    if not b or b.optional or b.likelyNoReal then return "no" end
     return nil
 end
 
@@ -219,7 +219,8 @@ function Roster.Build()
                 for _, n in ipairs(names) do level = level or ns.BOSS_LEVELS[n:lower()] end
             end
             g.rows[#g.rows + 1] = { display = b[1], names = names, optional = b.optional, variable = b.variable,
-                                    noReal = b.noReal, real = b.real, listedLevel = level, static = true }
+                                    noReal = b.noReal, real = b.real, likelyNoReal = b.likelyNoReal,
+                                    listedLevel = level, static = true }
         end
     end
 
@@ -300,7 +301,7 @@ function Roster.Build()
                     if ns.DROP_LIST[n:lower()] then onList = true end
                 end
             end
-            r.notOnList = covered and not onList and (r.optional or not r.static) and true or false
+            r.notOnList = covered and not onList and (r.optional or r.likelyNoReal or not r.static) and true or false
             if r.noReal then
                 r.low = true
             elseif r.real or learnedReal then
