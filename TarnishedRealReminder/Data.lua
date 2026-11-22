@@ -68,6 +68,9 @@ ns.ELIGIBLE_INSTANCE_NAMES = {
 --             once you get a Real from them.
 --   noReal    confirmed in game not to drop a Real, whatever its level
 --             (Warder Stilgiss is 56 and drops none).
+--   likelyNoReal  very likely no Real (not on the drop list, and a similar
+--             boss is confirmed): no reminder, but unlike noReal the addon
+--             still learns it if one does give you a Real.
 --   real      confirmed in game to drop a Real, whatever its level (Fineous
 --             Darkvire is 54 and drops one). The "55+" rule is only a guide.
 --   variable  the boss you fight changes from run to run (Ring of the Law
@@ -180,11 +183,15 @@ ns.ROSTER = {
         name = "Dire Maul North", ids = { 429 },
         instanceNames = { "dire maul", "dire maul - gordok commons", "gordok commons" },
         bosses = {
-            { "Guard Mol'dar" },
-            { "Stomper Kreeg" },
-            { "Guard Fengus" },
-            { "Guard Slip'kik" },
-            { "Captain Kromcrush" },
+            -- The guards: none is on the drop list, and Mol'dar is confirmed
+            -- in game to drop no Real, so the others very likely don't either.
+            -- likelyNoReal: no reminder, but a Real looted from one still
+            -- teaches the addon that it does drop one.
+            { "Guard Mol'dar", noReal = true },
+            { "Stomper Kreeg", likelyNoReal = true },
+            { "Guard Fengus", likelyNoReal = true },
+            { "Guard Slip'kik", likelyNoReal = true },
+            { "Captain Kromcrush", likelyNoReal = true },
             { "King Gordok & Cho'Rush the Observer", aliases = { "King Gordok", "Cho'Rush the Observer" } },
         },
     },

@@ -148,6 +148,36 @@ r = row("Stratholme Live", "Crimson Hammersmith")
 check(r and r.status == "low" and ns.Roster.STATUS.low.text(r) == "drops no Real", "checklist: Crimson Hammersmith drops no Real")
 enter("Blackrock Depths", 230)
 
+-- Dire Maul North guards: Mol'dar confirmed no Real; the other guards very
+-- likely none (not on the drop list) but still learnable.
+enter("Dire Maul", 429)
+kill("Guard Mol'dar", 59)
+kill("Stomper Kreeg", 59)
+kill("Guard Fengus", SECRET)
+kill("Guard Slip'kik", 59)
+kill("Captain Kromcrush", 61)
+check(#CDB.pending == 0, "Dire Maul North guards: no reminders")
+r = row("Dire Maul North", "Guard Mol'dar")
+check(r and ns.Roster.STATUS.low.text(r) == "drops no Real", "checklist: Mol'dar drops no Real")
+r = row("Dire Maul North", "Guard Fengus")
+check(r and r.status == "low" and ns.Roster.STATUS.low.text(r) == "not on the drop list", "checklist: Fengus not on the drop list")
+local gordok = kill("King Gordok", 62)
+check(#CDB.pending == 1, "King Gordok (on the drop list) still reminds")
+ns.dismissAll()
+-- A Real from a likely-no guard teaches that he does drop one.
+nextDay()
+local fengus = kill("Guard Fengus", SECRET)
+check(#CDB.pending == 0, "Fengus: no reminder")
+openCorpse(fengus, { { name = REAL, id = REAL_ID } })
+check(DB.realBosses["guard fengus"], "a Real from Fengus is learned")
+nextDay()
+kill("Guard Fengus", SECRET)
+check(#CDB.pending == 1, "after that, Fengus reminds")
+ns.dismissAll()
+DB.realBosses["guard fengus"] = nil
+CDB.looted = {}
+enter("Blackrock Depths", 230)
+
 -- High Interrogator Gerstahn and Lord Roccor: confirmed in game, no Real,
 -- whatever level is read (even a wrong 58).
 kill("High Interrogator Gerstahn", 58)
