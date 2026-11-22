@@ -91,8 +91,10 @@ check(pending() == 0, "Gerstahn with no level gives no reminder")
 killBoss("High Interrogator Gerstahn", -1, "G-gerstahn3")
 check(pending() == 0, "Gerstahn shown as ?? gives no reminder")
 killBoss("Mystery Boss", nil, "G-mystery")
-check(pending() == 1, "an unlisted boss with an unknown level still reminds (never miss a Real)")
-ns.dismissAll(); ns.CDB.looted["mystery boss"] = nil
+check(pending() == 0, "a boss unknown to the list and the drop list in BRD: no reminder")
+killBoss("Magmus", nil, "G-magmus0")
+check(pending() == 1, "Magmus (on the drop list), level unknown: reminder")
+ns.dismissAll(); ns.CDB.looted["magmus"] = nil
 
 -- 2c. A reminder left over from an older version for a below-55 boss is
 --     dropped at the next loading screen.

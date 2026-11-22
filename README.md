@@ -36,6 +36,9 @@ The addon reads each boss's level during the fight, so bosses under 55 (Lord Roc
 In dungeons the game often won't tell addons a boss's level. Then the addon uses the levels from Wowhead's WoW: Forever database. Only Blackrock Depths has bosses below 55, such as High Interrogator Gerstahn (52).
 Ring of the Law picks a random challenger, and only Gorosh the Dervish (56) drops a Real, so the addon looks at who you actually fought.
 
+For the five classic dungeons the addon also uses a drop list: every boss that Wowhead's WoW: Forever data has recorded dropping a Real (via forevertwinking.com). Bosses on it remind you, whatever their level. Rares, summoned bosses and unknown bosses that aren't on it don't remind you.
+Regular bosses that aren't on it still remind you, since the list may just be missing reports, until the addon learns otherwise from their corpse.
+
 Level 55 is only a guide. Fineous Darkvire is level 54 and drops a Real, while Warder Stilgiss is level 56 and doesn't, so what happens in game wins.
 Those two are marked in the boss list. For other bosses the addon learns from loot:
 - if a boss gives you a Real it didn't expect, the addon reminds you about that boss from then on;

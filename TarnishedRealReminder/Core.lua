@@ -365,7 +365,10 @@ ns.alert = alert
 --      its own corpse with no Real on a day you hadn't looted it
 --      (DB.noRealBosses) means no. Whichever happened last counts. Never
 --      used for a variable encounter like Ring of the Law;
---   2. Ring of the Law is judged by the challenger seen in the fight:
+--   2. the drop list (Data.lua ns.DROP_LIST, from Wowhead's Forever data) for
+--      the five classic dungeons: on it = yes; not on it and a rare,
+--      summoned or unknown boss = no; other bosses go on to the rules below;
+--   2b. Ring of the Law is judged by the challenger seen in the fight:
 --      Wowhead's level for it, else the level read;
 --   3. Wowhead's level for the boss (ns.BOSS_LEVELS), 55+ = yes. It wins over
 --      a level read in game, which can be an add's, hidden, or stale;
@@ -383,6 +386,9 @@ local function bossEligible(name, level, instanceName, seenNames)
         if DB.realBosses[lname] then return true, "a Real was looted from it before (learned)" end
         if DB.noRealBosses[lname] then return false, "its corpse had no Real before (learned)" end
     end
+    local verdict = ns.Roster and ns.Roster.DropListVerdict and ns.Roster.DropListVerdict(name, inst)
+    if verdict == "yes" then return true, "on the drop list" end
+    if verdict == "no" then return false, "rare, summoned or unknown boss, not on the drop list" end
     if variable then
         local best
         for seen in pairs(seenNames or {}) do

@@ -72,11 +72,40 @@ end
 -- Wowhead's levels decide when the game hides the level.
 kill("High Interrogator Gerstahn", SECRET)
 check(#CDB.pending == 0, "Gerstahn (52 on Wowhead), level hidden: no reminder")
-kill("Lord Incendius", nil, false)
-check(#CDB.pending == 0, "Incendius (53), no boss frame at all: no reminder")
+kill("Pyromancer Loregrain", nil, false)
+check(#CDB.pending == 0, "Loregrain (52, not on the drop list), no boss frame at all: no reminder")
 kill("Magmus", SECRET)
 check(#CDB.pending == 1, "Magmus (57), level hidden: reminder")
 ns.dismissAll()
+
+-- The drop list (Wowhead's Forever data): Bael'Gar (54) and Lord Incendius
+-- drop a Real although they're near or below 55.
+kill("Bael'gar", SECRET)
+check(#CDB.pending == 1, "Bael'Gar (54, on the drop list): reminder")
+kill("Lord Incendius", 53)
+check(#CDB.pending == 2, "Lord Incendius (on the drop list), even read as 53: reminder")
+r = row("Blackrock Depths", "Bael'gar")
+check(r.status == "waiting", "checklist counts Bael'Gar")
+ns.dismissAll()
+-- Not on the list and a rare, summoned or unknown boss: no reminder.
+kill("Panzor the Invincible", 57)
+kill("Black Guard Swordsmith", 61)
+check(#CDB.pending == 0, "rare Panzor (57) and unknown Black Guard Swordsmith (61): no reminder")
+r = row("Blackrock Depths", "Panzor the Invincible")
+check(r.status == "low" and ns.Roster.STATUS.low.text(r) == "not on the drop list", "checklist: Panzor not on the drop list")
+-- Not on the list but a regular 55+ boss: still reminds (the list may lack reports).
+enter("Stratholme", 329)
+kill("Balnazzar", 62)
+check(#CDB.pending == 1, "Balnazzar (regular boss, not on the list): still reminds")
+ns.dismissAll()
+-- The new dungeons aren't covered by the list.
+enter("Blackmaw Hold", 99902)
+kill("Mystery Blackmaw Boss", nil, false)
+check(#CDB.pending == 1, "unknown boss in a new dungeon: reminds (never miss a Real)")
+ns.dismissAll()
+CDB.looted = {}
+DB.knownBosses["Blackmaw Hold"] = nil
+enter("Blackrock Depths", 230)
 local r = row("Blackrock Depths", "Houndmaster Grebmar")
 check(r.status == "low" and ns.Roster.STATUS.low.text(r) == "level 52, no Real", "checklist: Grebmar level 52, no Real")
 r = row("Blackrock Depths", "High Interrogator Gerstahn")
@@ -135,22 +164,22 @@ r = row("Blackrock Depths", "Fineous Darkvire")
 check(r.level == 54 and r.status == "waiting", "checklist counts Darkvire")
 ns.dismissAll()
 
--- For bosses without such a confirmation, Wowhead's level beats anything read
--- in game (Lord Incendius, 53):
+-- For bosses without such evidence, Wowhead's level beats anything read in
+-- game (Houndmaster Grebmar, 52, not on the drop list):
 --   an add at a higher level on another boss frame,
-T.units.boss2 = { name = "Fireguard Destroyer", level = 58, guid = "G-add" }
-kill("Lord Incendius", SECRET)
+T.units.boss2 = { name = "Ironhand Guardian", level = 58, guid = "G-add" }
+kill("Houndmaster Grebmar", SECRET)
 T.units.boss2 = nil
-check(#CDB.pending == 0, "Incendius with a level-58 add: no reminder")
+check(#CDB.pending == 0, "Grebmar with a level-58 add: no reminder")
 --   a wrong level read for him,
-kill("Lord Incendius", 58)
-check(#CDB.pending == 0, "Incendius read as 58: no reminder (Wowhead says 53)")
+kill("Houndmaster Grebmar", 58)
+check(#CDB.pending == 0, "Grebmar read as 58: no reminder (Wowhead says 52)")
 --   or a wrong level stored by an older version.
-DB.bossLevels["lord incendius"] = 58
-kill("Lord Incendius", nil, false)
-check(#CDB.pending == 0, "Incendius with a stale stored level 58: no reminder")
-r = row("Blackrock Depths", "Lord Incendius")
-check(r.level == 53 and r.status == "low", "checklist shows Wowhead's 53, not the stored 58")
+DB.bossLevels["houndmaster grebmar"] = 58
+kill("Houndmaster Grebmar", nil, false)
+check(#CDB.pending == 0, "Grebmar with a stale stored level 58: no reminder")
+r = row("Blackrock Depths", "Houndmaster Grebmar")
+check(r.level == 52 and r.status == "low", "checklist shows Wowhead's 52, not the stored 58")
 
 -- A below-55 boss that does give a Real is learned: no reminder the first
 -- time, but the Real is recorded, and from then on it reminds.
