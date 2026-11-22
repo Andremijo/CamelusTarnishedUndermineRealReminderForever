@@ -251,11 +251,10 @@ ns.ROSTER = {
         -- names; they are added automatically when killed.
         name = "The Shaper's Terrace", new = true, instanceNames = { "shaper's terrace", "the shaper's terrace" },
         bosses = {
-            -- Bolt: confirmed in game, no Real. The other raptors are summoned
-            -- the same way, and summoned bosses haven't dropped Reals
-            -- elsewhere, so very likely no Real either (still learnable).
-            { "Cinder", likelyNoReal = true }, { "Snowtalon", likelyNoReal = true },
-            { "Bolt", noReal = true }, { "Vitrix", likelyNoReal = true },
+            -- The four raptors, summoned with Power Crystals: all confirmed in
+            -- game to drop no Real.
+            { "Cinder", noReal = true }, { "Snowtalon", noReal = true },
+            { "Bolt", noReal = true }, { "Vitrix", noReal = true },
             { "Nanaya" },
         },
     },

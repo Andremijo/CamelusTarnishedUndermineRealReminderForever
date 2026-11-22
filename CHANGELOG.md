@@ -7,8 +7,8 @@ Each `## vX.Y.Z` section below becomes the notes of that version's GitHub Releas
 **Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.
 
 ### Fixed
-- **Bolt in Shaper's Terrace no longer reminds you.** He's confirmed in game to drop no Real.
-- **The other raptors no longer remind you either:** Cinder, Snowtalon and Vitrix. They're summoned with Power Crystals like Bolt, and summoned bosses haven't dropped Reals elsewhere, so they very likely drop none. The checklist shows them as "probably no Real". If one of them does give you a Real, the addon learns that and reminds you about it from the next day. Nanaya, the final boss, still reminds you.
+- **The Shaper's Terrace raptors no longer remind you.** Bolt, Cinder, Snowtalon and Vitrix, summoned with Power Crystals, are all confirmed in game to drop no Real. The checklist shows them as "drops no Real". Nanaya, the final boss, still reminds you.
+- **"Probably no Real" now works in every dungeon.** Bosses marked as probably dropping no Real don't remind you, but the addon still learns it if one does give you a Real. This used to work only in the five classic dungeons.
 
 ## v1.3.1
 
