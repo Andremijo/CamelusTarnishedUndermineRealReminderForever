@@ -166,6 +166,43 @@ ns.dismissAll()
 CDB.looted = {}
 enter("Blackrock Depths", 230)
 
+-- Shaper's Terrace: the four summoned raptors are confirmed no Real; Nanaya
+-- still reminds.
+enter("The Shaper's Terrace", 99901)
+kill("Bolt", 60)
+kill("Cinder", SECRET)
+kill("Snowtalon", 60)
+kill("Vitrix", nil, false)
+check(#CDB.pending == 0, "Shaper's Terrace raptors: no reminders")
+for _, raptor in ipairs({ "Bolt", "Cinder", "Snowtalon", "Vitrix" }) do
+    r = row("The Shaper's Terrace", raptor)
+    check(r and r.status == "low" and ns.Roster.STATUS.low.text(r) == "drops no Real", "checklist: " .. raptor .. " drops no Real")
+end
+kill("Nanaya", 60)
+check(#CDB.pending == 1, "Nanaya still reminds")
+ns.dismissAll()
+CDB.looted = {}
+DB.knownBosses["The Shaper's Terrace"] = nil
+
+-- likelyNoReal (no reminder, but learnable) works in any dungeon.
+ns.ROSTER[#ns.ROSTER].bosses[1].likelyNoReal = true -- Blackmaw Hold's Withermaw, for this test
+enter("Blackmaw Hold", 99902)
+local wm = kill("Withermaw", 60)
+check(#CDB.pending == 0, "likelyNoReal boss in a new dungeon: no reminder")
+r = row("Blackmaw Hold", "Withermaw")
+check(r and ns.Roster.STATUS.low.text(r) == "probably no Real", "checklist: probably no Real")
+openCorpse(wm, { { name = REAL, id = REAL_ID } })
+check(DB.realBosses["withermaw"], "a Real from it is learned")
+nextDay()
+kill("Withermaw", 60)
+check(#CDB.pending == 1, "after that it reminds")
+ns.dismissAll()
+ns.ROSTER[#ns.ROSTER].bosses[1].likelyNoReal = nil
+DB.realBosses["withermaw"] = nil
+CDB.looted = {}
+DB.knownBosses["Blackmaw Hold"] = nil
+enter("Blackrock Depths", 230)
+
 -- High Interrogator Gerstahn and Lord Roccor: confirmed in game, no Real,
 -- whatever level is read (even a wrong 58).
 kill("High Interrogator Gerstahn", 58)
