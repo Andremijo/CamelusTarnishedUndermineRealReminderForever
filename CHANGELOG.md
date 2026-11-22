@@ -7,8 +7,7 @@ Each `## vX.Y.Z` section below becomes the notes of that version's GitHub Releas
 **Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.
 
 ### Fixed
-- **Guard Mol'dar no longer reminds you.** He's confirmed in game to drop no Real.
-- **The other Dire Maul North guards no longer remind you either:** Stomper Kreeg, Guard Fengus, Guard Slip'kik and Captain Kromcrush. None of them is on the drop list, so they very likely drop no Real like Mol'dar. If one of them does give you a Real, the addon learns that and reminds you about him from the next day. King Gordok, who is on the drop list, still reminds you.
+- **The Dire Maul North guards no longer remind you.** Guard Mol'dar, Stomper Kreeg, Guard Fengus, Guard Slip'kik and Captain Kromcrush are all confirmed in game to drop no Real. The checklist shows them as "drops no Real". King Gordok, who is on the drop list, still reminds you.
 
 ## v1.3.0
 

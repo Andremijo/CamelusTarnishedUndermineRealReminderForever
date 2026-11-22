@@ -183,15 +183,13 @@ ns.ROSTER = {
         name = "Dire Maul North", ids = { 429 },
         instanceNames = { "dire maul", "dire maul - gordok commons", "gordok commons" },
         bosses = {
-            -- The guards: none is on the drop list, and Mol'dar is confirmed
-            -- in game to drop no Real, so the others very likely don't either.
-            -- likelyNoReal: no reminder, but a Real looted from one still
-            -- teaches the addon that it does drop one.
+            -- The guards: none is on the drop list, and all are confirmed in
+            -- game to drop no Real.
             { "Guard Mol'dar", noReal = true },
-            { "Stomper Kreeg", likelyNoReal = true },
-            { "Guard Fengus", likelyNoReal = true },
-            { "Guard Slip'kik", likelyNoReal = true },
-            { "Captain Kromcrush", likelyNoReal = true },
+            { "Stomper Kreeg", noReal = true },
+            { "Guard Fengus", noReal = true },
+            { "Guard Slip'kik", noReal = true },
+            { "Captain Kromcrush", noReal = true },
             { "King Gordok & Cho'Rush the Observer", aliases = { "King Gordok", "Cho'Rush the Observer" } },
         },
     },
