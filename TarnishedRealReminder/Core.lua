@@ -389,6 +389,9 @@ local function bossEligible(name, level, instanceName, seenNames)
     local verdict = ns.Roster and ns.Roster.DropListVerdict and ns.Roster.DropListVerdict(name, inst)
     if verdict == "yes" then return true, "on the drop list" end
     if verdict == "no" then return false, "rare, summoned or unknown boss, not on the drop list" end
+    if ns.Roster and ns.Roster.IsLikelyNoReal and ns.Roster.IsLikelyNoReal(name, inst) then
+        return false, "very likely no Real (summoned like a confirmed boss)"
+    end
     if variable then
         local best
         for seen in pairs(seenNames or {}) do

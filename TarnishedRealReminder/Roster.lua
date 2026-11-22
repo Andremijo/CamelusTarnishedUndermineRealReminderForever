@@ -22,6 +22,7 @@ Roster.STATUS = {
                 text = function(r)
                     if r.noReal then return "drops no Real" end
                     if r.notOnList then return "not on the drop list" end
+                    if r.likelyNoReal then return "probably no Real" end
                     if r.learnedNoReal then return "no Real (learned)" end
                     if type(r.level) == "number" and r.level > 0 then return "level " .. r.level .. ", no Real" end
                     return "below 55, no Real"
@@ -190,6 +191,12 @@ function Roster.DropListVerdict(bossName, instanceName)
     return nil
 end
 
+-- Very likely no Real (likelyNoReal in the boss list), in any dungeon.
+function Roster.IsLikelyNoReal(bossName, instanceName)
+    local b = listedBoss(bossName, instanceName)
+    return b and b.likelyNoReal and true or false
+end
+
 function Roster.IsVariable(bossName, instanceName)
     local b = listedBoss(bossName, instanceName)
     return b and b.variable and true or false
@@ -311,6 +318,8 @@ function Roster.Build()
             elseif onList then
                 r.low = false -- on the drop list, whatever its level
             elseif r.notOnList then
+                r.low = true
+            elseif r.likelyNoReal then
                 r.low = true
             elseif type(level) == "number" and level > 0 then
                 r.low = level < ns.MIN_BOSS_LEVEL

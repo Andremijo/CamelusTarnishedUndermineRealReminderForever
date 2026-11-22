@@ -2,6 +2,14 @@
 
 Each `## vX.Y.Z` section below becomes the notes of that version's GitHub Release, published automatically when the version reaches `main`.
 
+## v1.3.2
+
+**Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.
+
+### Fixed
+- **Bolt in Shaper's Terrace no longer reminds you.** He's confirmed in game to drop no Real.
+- **The other raptors no longer remind you either:** Cinder, Snowtalon and Vitrix. They're summoned with Power Crystals like Bolt, and summoned bosses haven't dropped Reals elsewhere, so they very likely drop none. The checklist shows them as "probably no Real". If one of them does give you a Real, the addon learns that and reminds you about it from the next day. Nanaya, the final boss, still reminds you.
+
 ## v1.3.1
 
 **Install or update:** WoWUp picks this up automatically. To install by hand, unzip the `-forever.zip` below into your WoW: Forever `Interface\AddOns` folder.

@@ -166,6 +166,34 @@ ns.dismissAll()
 CDB.looted = {}
 enter("Blackrock Depths", 230)
 
+-- Shaper's Terrace: Bolt confirmed no Real; the other summoned raptors very
+-- likely none (learnable); Nanaya still reminds.
+enter("The Shaper's Terrace", 99901)
+kill("Bolt", 60)
+kill("Cinder", SECRET)
+kill("Snowtalon", 60)
+kill("Vitrix", nil, false)
+check(#CDB.pending == 0, "Shaper's Terrace raptors: no reminders")
+r = row("The Shaper's Terrace", "Bolt")
+check(r and ns.Roster.STATUS.low.text(r) == "drops no Real", "checklist: Bolt drops no Real")
+r = row("The Shaper's Terrace", "Cinder")
+check(r and r.status == "low" and ns.Roster.STATUS.low.text(r) == "probably no Real", "checklist: Cinder probably no Real")
+kill("Nanaya", 60)
+check(#CDB.pending == 1, "Nanaya still reminds")
+ns.dismissAll()
+nextDay()
+local cinder = kill("Cinder", SECRET)
+openCorpse(cinder, { { name = REAL, id = REAL_ID } })
+check(DB.realBosses["cinder"], "a Real from Cinder is learned")
+nextDay()
+kill("Cinder", SECRET)
+check(#CDB.pending == 1, "after that, Cinder reminds")
+ns.dismissAll()
+DB.realBosses["cinder"] = nil
+CDB.looted = {}
+DB.knownBosses["The Shaper's Terrace"] = nil
+enter("Blackrock Depths", 230)
+
 -- High Interrogator Gerstahn and Lord Roccor: confirmed in game, no Real,
 -- whatever level is read (even a wrong 58).
 kill("High Interrogator Gerstahn", 58)
